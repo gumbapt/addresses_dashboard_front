@@ -26,6 +26,7 @@ export interface menu {
   type?: string;
   subCaption?: string;
   external?: boolean;
+  permission?: string;
 }
 
 const sidebarItem: menu[] = [
@@ -34,12 +35,20 @@ const sidebarItem: menu[] = [
     title: "Dashboard",
     icon: "graph-new-linear",
     to: "/",
+    permission: "dashboard-access", // Permissão customizada para dashboard
   },
   { header: "Management" },
   {
     title: "Users",
     icon: "users-group-rounded-line-duotone",
     to: "/users",
+    permission: "user-read",
+  },
+  {
+    title: "Administrators",
+    icon: "user-shield-rounded-line-duotone",
+    to: "/admins",
+    permission: "admin-read",
   },
   { header: "ui" },
   {

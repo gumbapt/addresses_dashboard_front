@@ -1,11 +1,30 @@
 <script setup>
 import { Icon } from '@iconify/vue';
 const props = defineProps({ item: Object, level: Number });
+
+// Verificar permissões
+const { hasPermission, isSuperAdmin } = usePermissions();
+
+// Computed para verificar se o item deve ser exibido
+const shouldShowItem = computed(() => {
+  // Se não tem permissão definida, sempre mostrar
+  if (!props.item.permission) {
+    return true;
+  }
+  
+  // Super admin vê tudo
+  if (isSuperAdmin.value) {
+    return true;
+  }
+  
+  // Verificar permissão específica
+  return hasPermission(props.item.permission);
+});
 </script>
 
 <template>
     <!---Single Item-->
-    <div class="mb-1">
+    <div v-if="shouldShowItem" class="mb-1">
         <v-list-item   :href="item.external ? item.to : undefined"
         :to="!item.external ? item.to : undefined"
             class="bg-hover-primary" color="primary" :ripple="false" :disabled="item.disabled"

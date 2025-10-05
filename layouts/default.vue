@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 const title = ref("spikeadmin Nuxt 3 - Vuetify 3 - vite - Typescript Based Free Dashboard");
+const isDev = ref(process.dev);
+
 useHead({
   meta: [{ content: title }],
   titleTemplate: (titleChunk) => {
@@ -25,6 +27,9 @@ useHead({
                 
                 <!-- Chat Widget -->
                 <ChatWidget />
+                
+                <!-- Debug Button (apenas em desenvolvimento) -->
+                <DebugButton />
             </v-main>
         </v-app>
     </v-locale-provider>

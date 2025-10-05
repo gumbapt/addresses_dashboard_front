@@ -1,4 +1,4 @@
-import type { Admin } from '~/types/api';
+import type { Admin, LoginResponse } from '~/types/api';
 import { AuthService } from '~/services/AuthService';
 
 export const useAuth = () => {
@@ -8,6 +8,9 @@ export const useAuth = () => {
   
   // Instância do serviço de autenticação
   const authService = new AuthService();
+  
+  // Composable de permissões
+  const { setRoles, setPermissions, clearPermissions, loadPermissionsFromStorage } = usePermissions();
 
   // Função de login
   const login = async (email: string, password: string) => {
@@ -15,11 +18,24 @@ export const useAuth = () => {
       const result = await authService.login(email, password);
       
       if (result.success && result.data) {
-        user.value = result.data.admin;
+        const loginData = result.data as LoginResponse;
+        
+        // Definir dados do usuário
+        user.value = loginData.admin;
+        
+        // Definir roles, permissões e status de super admin
+        if (loginData.roles) {
+          // Nova estrutura com roles
+          setRoles(loginData.roles, loginData.admin.is_super_admin);
+        } else {
+          // Fallback para estrutura antiga (se ainda existir)
+          setPermissions([], loginData.admin.is_super_admin);
+        }
         
         // Salvar dados do usuário no localStorage
         if (process.client) {
-          localStorage.setItem('user', JSON.stringify(result.data.admin));
+          localStorage.setItem('user', JSON.stringify(loginData.admin));
+          localStorage.setItem('token', loginData.token);
         }
         
         return { success: true };
@@ -44,8 +60,13 @@ export const useAuth = () => {
       await authService.logout();
     } finally {
       user.value = null;
+      
+      // Limpar permissões
+      clearPermissions();
+      
       if (process.client) {
         localStorage.removeItem('user');
+        localStorage.removeItem('token');
       }
       navigateTo('/auth/login');
     }
@@ -54,6 +75,9 @@ export const useAuth = () => {
   // Função para verificar se o usuário está logado (usado no middleware)
   const checkAuth = async () => {
     if (process.client && !user.value) {
+      // Carregar permissões do localStorage
+      loadPermissionsFromStorage();
+      
       // Tentar recuperar usuário do localStorage
       const savedUser = localStorage.getItem('user');
       if (savedUser) {

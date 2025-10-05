@@ -1,15 +1,35 @@
 // Tipos da API
+export interface Permission {
+  id: number;
+  name: string;
+  slug: string;
+  description: string;
+  is_active: boolean;
+  resource: string;
+  action: string;
+  route: string | null;
+}
+
 export interface Admin {
   id: number;
   name: string;
   email: string;
   is_active: boolean;
+  is_super_admin: boolean;
   last_login_at: string | null;
+}
+
+export interface Role {
+  id: number;
+  name: string;
+  description: string;
+  permissions: Permission[];
 }
 
 export interface LoginResponse {
   admin: Admin;
   token: string;
+  roles: Role[];
 }
 
 export interface LoginRequest {
@@ -45,5 +65,10 @@ export interface Pagination {
 
 export interface UsersResponse {
   users: User[];
+  pagination: Pagination;
+}
+
+export interface AdminsResponse {
+  admins: Admin[];
   pagination: Pagination;
 } 
