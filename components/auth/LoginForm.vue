@@ -54,7 +54,7 @@ const handleLogin = async () => {
                     color="primary"
                     type="email"
                     :disabled="loading"
-                    placeholder="admin@letsjam.com"
+                    placeholder="admin@dashboard.com"
                 ></v-text-field>
             </v-col>
             <v-col cols="12">
