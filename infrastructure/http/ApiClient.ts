@@ -107,4 +107,8 @@ export class ApiClient implements IHttpClient {
   async delete<T>(url: string, config?: RequestConfig): Promise<T> {
     return this.request<T>('DELETE', url, undefined, config);
   }
+
+  async deleteWithBody<T>(url: string, data?: any, config?: RequestConfig): Promise<T> {
+    return this.request<T>('DELETE', url, data, config);
+  }
 } 

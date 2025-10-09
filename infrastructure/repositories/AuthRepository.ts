@@ -11,7 +11,12 @@ import type {
   UpdateRoleRequest,
   DeleteRoleRequest,
   UpdateRolePermissionsRequest,
-  RoleResponse
+  RoleResponse,
+  CreateAdminRequest,
+  UpdateAdminRequest,
+  DeleteAdminRequest,
+  AdminResponse,
+  AdminsListResponse
 } from '~/types/api';
 import { ApiClient } from '../http/ApiClient';
 import { API_CONFIG } from '~/config/api';
@@ -60,16 +65,6 @@ export class AuthRepository implements IAuthRepository {
     } catch (error) {
       console.error('Get users failed:', error);
       throw new Error('Failed to fetch users');
-    }
-  }
-
-  async getAdmins(page: number = 1, perPage: number = 15): Promise<AdminsResponse> {
-    try {
-      const response = await this.apiClient.get<AdminsResponse>(`/admins?page=${page}&per_page=${perPage}`);
-      return response;
-    } catch (error) {
-      console.error('Get admins failed:', error);
-      throw new Error('Failed to fetch administrators');
     }
   }
 

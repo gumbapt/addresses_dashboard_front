@@ -74,7 +74,7 @@ export interface UsersResponse {
 
 export interface AdminsResponse {
   admins: Admin[];
-  pagination: Pagination;
+  pagination?: Pagination;
 }
 
 // A API de roles retorna um array direto, não um objeto com paginação
@@ -113,4 +113,36 @@ export interface RoleResponse {
   data: {
     role: Role;
   };
+}
+
+// Request types for Admin CRUD
+export interface CreateAdminRequest {
+  name: string;
+  email: string;
+  password: string;
+  password_confirmation: string;
+  is_active: boolean;
+  role_id?: number;
+}
+
+export interface UpdateAdminRequest {
+  id: number;
+  name?: string;
+  email?: string;
+  is_active?: boolean;
+}
+
+export interface DeleteAdminRequest {
+  id: number;
+}
+
+// Response types for Admin CRUD
+export interface AdminResponse {
+  success: boolean;
+  data: Admin;
+}
+
+export interface AdminsListResponse {
+  success: boolean;
+  data: Admin[];
 } 

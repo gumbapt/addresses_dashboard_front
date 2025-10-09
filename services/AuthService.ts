@@ -4,7 +4,6 @@ import type {
   Admin, 
   ApiResponse, 
   UsersResponse, 
-  AdminsResponse, 
   RolesResponse, 
   PermissionsResponse, 
   Permission,
@@ -95,25 +94,6 @@ export class AuthService implements IAuthService {
         success: true,
         data: response,
         message: 'Users loaded successfully'
-      };
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      
-      return {
-        success: false,
-        error: errorMessage
-      };
-    }
-  }
-
-  async getAdmins(page: number = 1, perPage: number = 15): Promise<ApiResponse<AdminsResponse>> {
-    try {
-      const response = await this.authRepository.getAdmins(page, perPage);
-      
-      return {
-        success: true,
-        data: response,
-        message: 'Administrators loaded successfully'
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';

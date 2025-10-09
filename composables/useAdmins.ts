@@ -1,5 +1,5 @@
 import type { Admin, AdminsResponse, Pagination } from '~/types/api';
-import { AuthService } from '~/services/AuthService';
+import { AdminService } from '~/services/AdminService';
 
 export const useAdmins = () => {
   // Estados reativos
@@ -9,7 +9,7 @@ export const useAdmins = () => {
   const error = ref<string | null>(null);
   
   // Instância do serviço
-  const authService = new AuthService();
+  const adminService = new AdminService();
 
   // Função para carregar administradores
   const loadAdmins = async (page: number = 1, perPage: number = 15) => {
@@ -17,11 +17,20 @@ export const useAdmins = () => {
     error.value = null;
     
     try {
-      const result = await authService.getAdmins(page, perPage);
+      const result = await adminService.getAdmins(page, perPage);
       
       if (result.success && result.data) {
-        admins.value = result.data.admins;
-        pagination.value = result.data.pagination;
+        // A API retorna um array direto em result.data
+        admins.value = result.data;
+        // Criar paginação mock já que a API não retorna paginação
+        pagination.value = {
+          current_page: page,
+          per_page: perPage,
+          total: result.data.length,
+          last_page: 1,
+          from: 1,
+          to: result.data.length
+        };
       } else {
         error.value = result.error || 'Failed to load administrators';
       }
@@ -75,6 +84,9 @@ export const useAdmins = () => {
 
   // Computed para administradores formatados
   const formattedAdmins = computed(() => {
+    if (!admins.value || !Array.isArray(admins.value)) {
+      return [];
+    }
     return admins.value.map(formatAdminForDisplay);
   });
 
@@ -114,6 +126,45 @@ export const useAdmins = () => {
     return pages;
   });
 
+  // Função para criar administrador
+  const createAdmin = async (data: any) => {
+    try {
+      const result = await adminService.createAdmin(data);
+      return result;
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to create admin'
+      };
+    }
+  };
+
+  // Função para atualizar administrador
+  const updateAdmin = async (data: any) => {
+    try {
+      const result = await adminService.updateAdmin(data);
+      return result;
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to update admin'
+      };
+    }
+  };
+
+  // Função para deletar administrador
+  const deleteAdmin = async (id: number) => {
+    try {
+      const result = await adminService.deleteAdmin({ id });
+      return result;
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to delete admin'
+      };
+    }
+  };
+
   return {
     // Estados
     admins: readonly(admins),
@@ -133,6 +184,9 @@ export const useAdmins = () => {
     prevPage,
     goToPage,
     changePerPage,
-    formatAdminForDisplay
+    formatAdminForDisplay,
+    createAdmin,
+    updateAdmin,
+    deleteAdmin
   };
 };

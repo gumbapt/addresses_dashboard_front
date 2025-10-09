@@ -20,11 +20,20 @@ const {
   changePerPage,
   canGoNext,
   canGoPrev,
-  pageNumbers
+  pageNumbers,
+  createAdmin,
+  updateAdmin,
+  deleteAdmin
 } = useAdmins();
+
+// Usar composable de roles para seleção
+const { formattedRoles, loadRoles } = useRoles();
 
 // Verificar permissões
 const { hasPermission, canAccess } = usePermissions();
+
+// Notificações
+const notification = useNotification();
 
 // Estados reativos para filtros
 const search = ref('');
@@ -38,6 +47,20 @@ const selectedAdmin = ref<any>(null);
 // Estados do chat
 const showChatDialog = ref(false);
 const selectedChatAdmin = ref<any>(null);
+
+// Estados do formulário de admin
+const adminForm = ref({
+  name: '',
+  email: '',
+  password: '',
+  password_confirmation: '',
+  is_active: true,
+  role_id: null as number | null
+});
+
+// Estado para salvar
+const saving = ref(false);
+const saveError = ref<string | null>(null);
 
 // Filtros disponíveis
 const statusOptions = [
@@ -65,33 +88,125 @@ const filteredAdmins = computed(() => {
 });
 
 // Funções de ação
-const addAdmin = () => {
+const addAdmin = async () => {
   if (hasPermission('admin-create')) {
+    // Resetar formulário
+    adminForm.value = {
+      name: '',
+      email: '',
+      password: '',
+      password_confirmation: '',
+      is_active: true,
+      role_id: null
+    };
+    
+    // Carregar roles se ainda não carregou
+    if (formattedRoles.value.length === 0) {
+      await loadRoles();
+    }
+    
     showAddDialog.value = true;
   }
 };
 
-const editAdmin = (admin: any) => {
+const editAdmin = async (admin: any) => {
   if (hasPermission('admin-update')) {
     selectedAdmin.value = { ...admin };
+    
+    // Preencher formulário com dados do admin
+    adminForm.value = {
+      name: admin.name,
+      email: admin.email,
+      password: '',
+      password_confirmation: '',
+      is_active: admin.is_active,
+      role_id: null // Você pode adicionar lógica para pegar o role_id se necessário
+    };
+    
+    // Carregar roles se ainda não carregou
+    if (formattedRoles.value.length === 0) {
+      await loadRoles();
+    }
+    
     showEditDialog.value = true;
   }
 };
 
-const deleteAdmin = (admin: any) => {
+const selectAdminToDelete = (admin: any) => {
   if (hasPermission('admin-delete')) {
     selectedAdmin.value = admin;
     showDeleteDialog.value = true;
   }
 };
 
-const confirmDelete = () => {
+const saveAdmin = async () => {
+  saving.value = true;
+  saveError.value = null;
+  
+  try {
+    if (selectedAdmin.value) {
+      // Editando admin existente
+      const updateData = {
+        id: selectedAdmin.value.id,
+        name: adminForm.value.name,
+        email: adminForm.value.email,
+        is_active: adminForm.value.is_active
+      };
+      
+      const result = await updateAdmin(updateData);
+      
+      if (result.success) {
+        showEditDialog.value = false;
+        notification.success('Administrator updated successfully');
+        await loadAdmins(pagination.value?.current_page || 1, pagination.value?.per_page || 15);
+      } else {
+        saveError.value = result.error || 'Failed to update admin';
+        notification.error(result.error || 'Failed to update admin');
+      }
+    } else {
+      // Criando novo admin
+      const result = await createAdmin(adminForm.value);
+      
+      if (result.success) {
+        showAddDialog.value = false;
+        notification.success('Administrator created successfully');
+        await loadAdmins(pagination.value?.current_page || 1, pagination.value?.per_page || 15);
+      } else {
+        saveError.value = result.error || 'Failed to create admin';
+        notification.error(result.error || 'Failed to create admin');
+      }
+    }
+  } catch (error) {
+    saveError.value = error instanceof Error ? error.message : 'Unexpected error';
+    notification.error(error instanceof Error ? error.message : 'Unexpected error');
+  } finally {
+    saving.value = false;
+  }
+};
+
+const confirmDelete = async () => {
   if (selectedAdmin.value) {
-    // Aqui você implementaria a chamada para deletar na API
-    showDeleteDialog.value = false;
-    selectedAdmin.value = null;
-    // Recarregar administradores após deletar
-    loadAdmins(pagination.value?.current_page || 1, pagination.value?.per_page || 15);
+    saving.value = true;
+    saveError.value = null;
+    
+    try {
+      const result = await deleteAdmin(selectedAdmin.value.id);
+      
+      if (result.success) {
+        showDeleteDialog.value = false;
+        selectedAdmin.value = null;
+        notification.success('Administrator deleted successfully');
+        await loadAdmins(pagination.value?.current_page || 1, pagination.value?.per_page || 15);
+      } else {
+        saveError.value = result.error || 'Failed to delete admin';
+        notification.error(result.error || 'Failed to delete admin');
+      }
+    } catch (error) {
+      saveError.value = error instanceof Error ? error.message : 'Unexpected error';
+      notification.error(error instanceof Error ? error.message : 'Unexpected error');
+    } finally {
+      saving.value = false;
+    }
   }
 };
 
@@ -245,13 +360,12 @@ onMounted(() => {
           <v-table fixed-header height="600px">
             <thead>
               <tr>
-                <th class="text-left">Administrador</th>
+                <th class="text-left">Administrator</th>
                 <th class="text-left">Email</th>
                 <th class="text-left">Role</th>
                 <th class="text-left">Status</th>
-                <th class="text-left">Último Login</th>
-                <th class="text-left">Criado em</th>
-                <th class="text-center">Ações</th>
+                <th class="text-left">Last Login</th>
+                <th class="text-center">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -287,7 +401,6 @@ onMounted(() => {
                   </v-chip>
                 </td>
                 <td>{{ admin.lastLogin }}</td>
-                <td>{{ new Date(admin.created_at || Date.now()).toLocaleDateString('pt-BR') }}</td>
                 <td>
                   <div class="d-flex justify-center gap-1">
                     <v-btn
@@ -329,7 +442,7 @@ onMounted(() => {
                       size="small"
                       variant="text"
                       color="error"
-                      @click="deleteAdmin(admin)"
+                      @click="selectAdminToDelete(admin)"
                       title="Excluir"
                     >
                       <v-icon>mdi-delete</v-icon>
@@ -398,46 +511,166 @@ onMounted(() => {
       </v-col>
     </v-row>
 
-    <!-- Diálogos (placeholder) -->
-    <v-dialog v-model="showAddDialog" max-width="600px">
+    <!-- Diálogos -->
+    <v-dialog v-model="showAddDialog" max-width="600px" scrollable>
       <v-card>
-        <v-card-title>Adicionar Administrador</v-card-title>
+        <v-card-title>Create Administrator</v-card-title>
         <v-card-text>
-          <p>Formulário para adicionar novo administrador...</p>
+          <v-form>
+            <v-row>
+              <v-col cols="12">
+                <v-text-field
+                  v-model="adminForm.name"
+                  label="Name"
+                  variant="outlined"
+                  required
+                  placeholder="Administrator Name"
+                />
+              </v-col>
+              
+              <v-col cols="12">
+                <v-text-field
+                  v-model="adminForm.email"
+                  label="Email"
+                  variant="outlined"
+                  required
+                  type="email"
+                  placeholder="admin@example.com"
+                />
+              </v-col>
+              
+              <v-col cols="12">
+                <v-text-field
+                  v-model="adminForm.password"
+                  label="Password"
+                  variant="outlined"
+                  required
+                  type="password"
+                  placeholder="Minimum 8 characters"
+                />
+              </v-col>
+              
+              <v-col cols="12">
+                <v-text-field
+                  v-model="adminForm.password_confirmation"
+                  label="Confirm Password"
+                  variant="outlined"
+                  required
+                  type="password"
+                  placeholder="Re-enter password"
+                />
+              </v-col>
+              
+              <v-col cols="12">
+                <v-select
+                  v-model="adminForm.role_id"
+                  :items="formattedRoles"
+                  item-title="name"
+                  item-value="id"
+                  label="Role (Optional)"
+                  variant="outlined"
+                  clearable
+                  placeholder="Select a role"
+                >
+                  <template v-slot:item="{ props, item }">
+                    <v-list-item v-bind="props">
+                      <template v-slot:subtitle>
+                        <span class="text-caption">{{ item.raw.permissionsCount }} permissions</span>
+                      </template>
+                    </v-list-item>
+                  </template>
+                </v-select>
+              </v-col>
+              
+              <v-col cols="12">
+                <v-switch
+                  v-model="adminForm.is_active"
+                  label="Active"
+                  color="primary"
+                  hide-details
+                />
+              </v-col>
+            </v-row>
+          </v-form>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn @click="showAddDialog = false">Cancelar</v-btn>
-          <v-btn color="primary">Salvar</v-btn>
+          <v-alert v-if="saveError" type="error" variant="tonal" density="compact" class="mr-4">
+            {{ saveError }}
+          </v-alert>
+          <v-btn @click="showAddDialog = false" :disabled="saving">Cancel</v-btn>
+          <v-btn color="primary" @click="saveAdmin" :loading="saving" :disabled="saving">Create</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
-    <v-dialog v-model="showEditDialog" max-width="600px">
+    <v-dialog v-model="showEditDialog" max-width="600px" scrollable>
       <v-card>
-        <v-card-title>Editar Administrador</v-card-title>
+        <v-card-title>Edit Administrator: {{ selectedAdmin?.name }}</v-card-title>
         <v-card-text>
-          <p>Formulário para editar administrador...</p>
+          <v-form>
+            <v-row>
+              <v-col cols="12">
+                <v-text-field
+                  v-model="adminForm.name"
+                  label="Name"
+                  variant="outlined"
+                  required
+                />
+              </v-col>
+              
+              <v-col cols="12">
+                <v-text-field
+                  v-model="adminForm.email"
+                  label="Email"
+                  variant="outlined"
+                  required
+                  type="email"
+                />
+              </v-col>
+              
+              <v-col cols="12">
+                <v-switch
+                  v-model="adminForm.is_active"
+                  label="Active"
+                  color="primary"
+                  hide-details
+                />
+              </v-col>
+              
+              <v-col cols="12">
+                <v-alert type="info" variant="tonal" density="compact">
+                  <div class="text-caption">Leave password fields empty to keep current password</div>
+                </v-alert>
+              </v-col>
+            </v-row>
+          </v-form>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn @click="showEditDialog = false">Cancelar</v-btn>
-          <v-btn color="primary">Salvar</v-btn>
+          <v-alert v-if="saveError" type="error" variant="tonal" density="compact" class="mr-4">
+            {{ saveError }}
+          </v-alert>
+          <v-btn @click="showEditDialog = false" :disabled="saving">Cancel</v-btn>
+          <v-btn color="primary" @click="saveAdmin" :loading="saving" :disabled="saving">Save Changes</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
     <v-dialog v-model="showDeleteDialog" max-width="400px">
       <v-card>
-        <v-card-title>Confirmar Exclusão</v-card-title>
+        <v-card-title>Confirm Deletion</v-card-title>
         <v-card-text>
-          <p>Tem certeza que deseja excluir este administrador?</p>
+          <p>Are you sure you want to delete this administrator?</p>
           <p><strong>{{ selectedAdmin?.name }}</strong></p>
+          <v-alert v-if="saveError" type="error" variant="tonal" density="compact" class="mt-4">
+            {{ saveError }}
+          </v-alert>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn @click="showDeleteDialog = false">Cancelar</v-btn>
-          <v-btn color="error" @click="confirmDelete">Excluir</v-btn>
+          <v-btn @click="showDeleteDialog = false" :disabled="saving">Cancel</v-btn>
+          <v-btn color="error" @click="confirmDelete" :loading="saving" :disabled="saving">Delete</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
