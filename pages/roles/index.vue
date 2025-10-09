@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import UiChildCard from '@/components/shared/UiChildCard.vue';
+import PermissionSelector from '@/components/PermissionSelector.vue';
 import { AuthService } from '~/services/AuthService';
 
 // Definir middleware de autenticação e permissões
@@ -275,12 +276,12 @@ onMounted(() => {
     <!-- Filtros -->
     <v-row class="mb-6">
       <v-col cols="12">
-        <UiChildCard title="Filtros">
+        <UiChildCard title="Filters">
           <v-row>
             <v-col cols="12" md="6">
               <v-text-field
                 v-model="search"
-                label="Buscar por nome ou descrição"
+                label="Search by name or description"
                 prepend-inner-icon="mdi-magnify"
                 variant="outlined"
                 density="compact"
@@ -307,21 +308,20 @@ onMounted(() => {
                   @click="clearFilters"
                   prepend-icon="mdi-refresh"
                 >
-                  Limpar Filtros
+                  Clear Filters
                 </v-btn>
                 <v-chip
                   color="primary"
                   variant="tonal"
                   class="ml-auto"
                 >
-                  {{ filteredRoles.length }} roles encontrados
+                  {{ filteredRoles.length }} roles found
                 </v-chip>
               </div>
             </v-col>
           </v-row>
         </UiChildCard>
-      </v-col>
-    </v-row>
+      </v-col> </v-row>
 
     <!-- Loading -->
     <v-row v-if="loading">
@@ -348,16 +348,16 @@ onMounted(() => {
     <!-- Tabela de Roles -->
     <v-row v-else>
       <v-col cols="12">
-        <UiChildCard title="Lista de Roles">
+        <UiChildCard title="Roles List">
           <v-table fixed-header height="600px">
             <thead>
               <tr>
-                <th class="text-left">Nome</th>
-                <th class="text-left">Descrição</th>
-                <th class="text-left">Permissões</th>
+                <th class="text-left">Name</th>
+                <th class="text-left">Description</th>
+                <th class="text-left">Permissions</th>
                 <th class="text-left">Status</th>
-                <th class="text-left">Criado em</th>
-                <th class="text-center">Ações</th>
+                <th class="text-left">Created At</th>
+                <th class="text-center">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -372,7 +372,7 @@ onMounted(() => {
                     variant="tonal"
                     size="small"
                   >
-                    {{ role.permissionsCount }} permissões
+                    {{ role.permissionsCount }} permissions
                   </v-chip>
                 </td>
                 <td>
@@ -393,7 +393,7 @@ onMounted(() => {
                       variant="text"
                       color="info"
                       @click="viewPermissions(role)"
-                      title="Ver Permissões"
+                      title="View Permissions"
                     >
                       <v-icon>mdi-eye</v-icon>
                     </v-btn>
@@ -404,7 +404,7 @@ onMounted(() => {
                       variant="text"
                       color="primary"
                       @click="editRole(role)"
-                      title="Editar"
+                      title="Edit"
                     >
                       <v-icon>mdi-pencil</v-icon>
                     </v-btn>
@@ -415,7 +415,7 @@ onMounted(() => {
                       variant="text"
                       :color="role.status === 'Ativo' ? 'warning' : 'success'"
                       @click="toggleRoleStatus(role)"
-                      :title="role.status === 'Ativo' ? 'Desativar' : 'Ativar'"
+                      :title="role.status === 'Ativo' ? 'Deactivate' : 'Activate'"
                     >
                       <v-icon>{{ role.status === 'Ativo' ? 'mdi-toggle-switch-off' : 'mdi-toggle-switch' }}</v-icon>
                     </v-btn>
@@ -426,7 +426,7 @@ onMounted(() => {
                       variant="text"
                       color="error"
                       @click="deleteRole(role)"
-                      title="Excluir"
+                      title="Delete"
                     >
                       <v-icon>mdi-delete</v-icon>
                     </v-btn>
@@ -449,7 +449,7 @@ onMounted(() => {
     <!-- Diálogos -->
     <v-dialog v-model="showAddDialog" max-width="900px" scrollable>
       <v-card>
-        <v-card-title>Criar Role</v-card-title>
+        <v-card-title>Create Role</v-card-title>
         <v-card-text>
           <v-form>
             <v-row>
@@ -484,41 +484,12 @@ onMounted(() => {
               </v-col>
               
               <v-col cols="12">
-                <h3 class="mb-4">Select Permissions</h3>
-                
-                <div v-if="loadingPermissions" class="text-center py-4">
-                  <v-progress-circular indeterminate color="primary"></v-progress-circular>
-                  <p class="mt-2">Loading permissions...</p>
-                </div>
-                
-                <div v-else>
-                  <div v-for="(perms, resource) in groupedPermissions" :key="resource" class="mb-4">
-                    <h4 class="mb-2">{{ formatResourceName(resource) }}</h4>
-                    <v-row>
-                      <v-col 
-                        v-for="permission in perms" 
-                        :key="permission.id"
-                        cols="12" sm="6" md="4"
-                      >
-                        <v-checkbox
-                          v-model="roleForm.selectedPermissions"
-                          :value="permission.id"
-                          :label="permission.name"
-                          hide-details
-                          density="compact"
-                        >
-                          <template v-slot:label>
-                            <div>
-                              <div class="font-weight-medium">{{ permission.name }}</div>
-                              <div class="text-caption text-medium-emphasis">{{ permission.description }}</div>
-                            </div>
-                          </template>
-                        </v-checkbox>
-                      </v-col>
-                    </v-row>
-                    <v-divider class="mt-3" />
-                  </div>
-                </div>
+                <PermissionSelector
+                  v-model="roleForm.selectedPermissions"
+                  :grouped-permissions="groupedPermissions"
+                  :loading="loadingPermissions"
+                  :format-resource-name="formatResourceName"
+                />
               </v-col>
             </v-row>
           </v-form>
@@ -539,7 +510,7 @@ onMounted(() => {
 
     <v-dialog v-model="showEditDialog" max-width="900px" scrollable>
       <v-card>
-        <v-card-title>Editar Role: {{ selectedRole?.name }}</v-card-title>
+        <v-card-title>Edit Role: {{ selectedRole?.name }}</v-card-title>
         <v-card-text>
           <v-form>
             <v-row>
@@ -571,41 +542,12 @@ onMounted(() => {
               </v-col>
               
               <v-col cols="12">
-                <h3 class="mb-4">Select Permissions</h3>
-                
-                <div v-if="loadingPermissions" class="text-center py-4">
-                  <v-progress-circular indeterminate color="primary"></v-progress-circular>
-                  <p class="mt-2">Loading permissions...</p>
-                </div>
-                
-                <div v-else>
-                  <div v-for="(perms, resource) in groupedPermissions" :key="resource" class="mb-4">
-                    <h4 class="mb-2">{{ formatResourceName(resource) }}</h4>
-                    <v-row>
-                      <v-col 
-                        v-for="permission in perms" 
-                        :key="permission.id"
-                        cols="12" sm="6" md="4"
-                      >
-                        <v-checkbox
-                          v-model="roleForm.selectedPermissions"
-                          :value="permission.id"
-                          :label="permission.name"
-                          hide-details
-                          density="compact"
-                        >
-                          <template v-slot:label>
-                            <div>
-                              <div class="font-weight-medium">{{ permission.name }}</div>
-                              <div class="text-caption text-medium-emphasis">{{ permission.description }}</div>
-                            </div>
-                          </template>
-                        </v-checkbox>
-                      </v-col>
-                    </v-row>
-                    <v-divider class="mt-3" />
-                  </div>
-                </div>
+                <PermissionSelector
+                  v-model="roleForm.selectedPermissions"
+                  :grouped-permissions="groupedPermissions"
+                  :loading="loadingPermissions"
+                  :format-resource-name="formatResourceName"
+                />
               </v-col>
             </v-row>
           </v-form>
