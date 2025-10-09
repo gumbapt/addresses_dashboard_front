@@ -43,7 +43,6 @@ const selectedRole = ref<any>(null);
 // Estados do formulário de role
 const roleForm = ref({
   name: '',
-  slug: '',
   description: '',
   is_active: true,
   selectedPermissions: [] as number[]
@@ -73,7 +72,6 @@ const addRole = async () => {
     // Resetar formulário
     roleForm.value = {
       name: '',
-      slug: '',
       description: '',
       is_active: true,
       selectedPermissions: []
@@ -95,7 +93,6 @@ const editRole = async (role: any) => {
     // Preencher formulário com dados do role
     roleForm.value = {
       name: role.name,
-      slug: role.slug,
       description: role.description,
       is_active: role.is_active,
       selectedPermissions: role.permissions ? role.permissions.map((p: any) => p.id) : []
@@ -459,49 +456,39 @@ onMounted(() => {
               <v-col cols="12">
                 <v-text-field
                   v-model="roleForm.name"
-                  label="Nome do Role"
+                  label="Role Name"
                   variant="outlined"
                   required
                   placeholder="Ex: Manager"
-                />
-              </v-col>
-              
-              <v-col cols="12">
-                <v-text-field
-                  v-model="roleForm.slug"
-                  label="Slug"
-                  variant="outlined"
-                  required
-                  placeholder="Ex: manager"
-                  hint="Identificador único (letras minúsculas e hífens)"
+                  hint="Slug will be auto-generated from name"
                 />
               </v-col>
               
               <v-col cols="12">
                 <v-textarea
                   v-model="roleForm.description"
-                  label="Descrição"
+                  label="Description"
                   variant="outlined"
                   rows="3"
-                  placeholder="Descreva o propósito deste role..."
+                  placeholder="Describe the purpose of this role..."
                 />
               </v-col>
               
               <v-col cols="12">
                 <v-switch
                   v-model="roleForm.is_active"
-                  label="Role Ativo"
+                  label="Active Role"
                   color="primary"
                   hide-details
                 />
               </v-col>
               
               <v-col cols="12">
-                <h3 class="mb-4">Selecionar Permissões</h3>
+                <h3 class="mb-4">Select Permissions</h3>
                 
                 <div v-if="loadingPermissions" class="text-center py-4">
                   <v-progress-circular indeterminate color="primary"></v-progress-circular>
-                  <p class="mt-2">Carregando permissões...</p>
+                  <p class="mt-2">Loading permissions...</p>
                 </div>
                 
                 <div v-else>
@@ -538,14 +525,14 @@ onMounted(() => {
         </v-card-text>
         <v-card-actions>
           <v-chip color="info" variant="tonal">
-            {{ roleForm.selectedPermissions.length }} permissões selecionadas
+            {{ roleForm.selectedPermissions.length }} permissions selected
           </v-chip>
           <v-spacer></v-spacer>
           <v-alert v-if="saveError" type="error" variant="tonal" density="compact" class="mr-4">
             {{ saveError }}
           </v-alert>
-          <v-btn @click="showAddDialog = false" :disabled="saving">Cancelar</v-btn>
-          <v-btn color="primary" @click="saveRole" :loading="saving" :disabled="saving">Criar Role</v-btn>
+          <v-btn @click="showAddDialog = false" :disabled="saving">Cancel</v-btn>
+          <v-btn color="primary" @click="saveRole" :loading="saving" :disabled="saving">Create Role</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -559,26 +546,16 @@ onMounted(() => {
               <v-col cols="12">
                 <v-text-field
                   v-model="roleForm.name"
-                  label="Nome do Role"
+                  label="Role Name"
                   variant="outlined"
                   required
-                />
-              </v-col>
-              
-              <v-col cols="12">
-                <v-text-field
-                  v-model="roleForm.slug"
-                  label="Slug"
-                  variant="outlined"
-                  required
-                  hint="Identificador único (letras minúsculas e hífens)"
                 />
               </v-col>
               
               <v-col cols="12">
                 <v-textarea
                   v-model="roleForm.description"
-                  label="Descrição"
+                  label="Description"
                   variant="outlined"
                   rows="3"
                 />
@@ -587,18 +564,18 @@ onMounted(() => {
               <v-col cols="12">
                 <v-switch
                   v-model="roleForm.is_active"
-                  label="Role Ativo"
+                  label="Active Role"
                   color="primary"
                   hide-details
                 />
               </v-col>
               
               <v-col cols="12">
-                <h3 class="mb-4">Selecionar Permissões</h3>
+                <h3 class="mb-4">Select Permissions</h3>
                 
                 <div v-if="loadingPermissions" class="text-center py-4">
                   <v-progress-circular indeterminate color="primary"></v-progress-circular>
-                  <p class="mt-2">Carregando permissões...</p>
+                  <p class="mt-2">Loading permissions...</p>
                 </div>
                 
                 <div v-else>
@@ -635,23 +612,23 @@ onMounted(() => {
         </v-card-text>
         <v-card-actions>
           <v-chip color="info" variant="tonal">
-            {{ roleForm.selectedPermissions.length }} permissões selecionadas
+            {{ roleForm.selectedPermissions.length }} permissions selected
           </v-chip>
           <v-spacer></v-spacer>
           <v-alert v-if="saveError" type="error" variant="tonal" density="compact" class="mr-4">
             {{ saveError }}
           </v-alert>
-          <v-btn @click="showEditDialog = false" :disabled="saving">Cancelar</v-btn>
-          <v-btn color="primary" @click="saveRole" :loading="saving" :disabled="saving">Salvar Alterações</v-btn>
+          <v-btn @click="showEditDialog = false" :disabled="saving">Cancel</v-btn>
+          <v-btn color="primary" @click="saveRole" :loading="saving" :disabled="saving">Save Changes</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
     <v-dialog v-model="showDeleteDialog" max-width="400px">
       <v-card>
-        <v-card-title>Confirmar Exclusão</v-card-title>
+        <v-card-title>Confirm Deletion</v-card-title>
         <v-card-text>
-          <p>Tem certeza que deseja excluir este role?</p>
+          <p>Are you sure you want to delete this role?</p>
           <p><strong>{{ selectedRole?.name }}</strong></p>
           <v-alert v-if="saveError" type="error" variant="tonal" density="compact" class="mt-4">
             {{ saveError }}
@@ -659,8 +636,8 @@ onMounted(() => {
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn @click="showDeleteDialog = false" :disabled="saving">Cancelar</v-btn>
-          <v-btn color="error" @click="confirmDelete" :loading="saving" :disabled="saving">Excluir</v-btn>
+          <v-btn @click="showDeleteDialog = false" :disabled="saving">Cancel</v-btn>
+          <v-btn color="error" @click="confirmDelete" :loading="saving" :disabled="saving">Delete</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -668,14 +645,14 @@ onMounted(() => {
     <!-- Diálogo de Permissões -->
     <v-dialog v-model="showPermissionsDialog" max-width="800px">
       <v-card>
-        <v-card-title>Permissões do Role: {{ selectedRole?.name }}</v-card-title>
+        <v-card-title>Role Permissions: {{ selectedRole?.name }}</v-card-title>
         <v-card-text>
           <div v-if="selectedRole">
-            <p><strong>Descrição:</strong> {{ selectedRole.description }}</p>
-            <p><strong>Total de Permissões:</strong> {{ selectedRole.permissionsCount }}</p>
+            <p><strong>Description:</strong> {{ selectedRole.description }}</p>
+            <p><strong>Total Permissions:</strong> {{ selectedRole.permissionsCount }}</p>
             
             <div v-if="selectedRole.permissions && selectedRole.permissions.length > 0" class="mt-4">
-              <h4>Lista de Permissões:</h4>
+              <h4>Permissions List:</h4>
               <div class="permissions-grid">
                 <v-chip 
                   v-for="permission in selectedRole.permissions" 
@@ -688,13 +665,13 @@ onMounted(() => {
               </div>
             </div>
             <div v-else>
-              <p>Nenhuma permissão encontrada para este role.</p>
+              <p>No permissions found for this role.</p>
             </div>
           </div>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn @click="showPermissionsDialog = false">Fechar</v-btn>
+          <v-btn @click="showPermissionsDialog = false">Close</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
