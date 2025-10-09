@@ -46,13 +46,13 @@ const sidebarItem: menu[] = [
   },
   {
     title: "Administrators",
-    icon: "user-shield-rounded-line-duotone",
+    icon: "shield-user-outline",
     to: "/admins",
     permission: "admin-read",
   },
   {
     title: "Roles",
-    icon: "shield-user-rounded-line-duotone",
+    icon: "shield-keyhole-linear",
     to: "/roles",
     permission: "role-assign",
   },
