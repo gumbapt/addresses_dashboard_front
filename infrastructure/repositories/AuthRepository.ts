@@ -1,5 +1,5 @@
 import type { IAuthRepository } from '~/types/domain';
-import type { LoginRequest, LoginResponse, Admin, UsersResponse, AdminsResponse } from '~/types/api';
+import type { LoginRequest, LoginResponse, Admin, UsersResponse, AdminsResponse, RolesResponse, PermissionsResponse } from '~/types/api';
 import { ApiClient } from '../http/ApiClient';
 import { API_CONFIG } from '~/config/api';
 
@@ -57,6 +57,26 @@ export class AuthRepository implements IAuthRepository {
     } catch (error) {
       console.error('Get admins failed:', error);
       throw new Error('Falha ao buscar administradores');
+    }
+  }
+
+  async getRoles(): Promise<RolesResponse> {
+    try {
+      const response = await this.apiClient.get<RolesResponse>('/roles');
+      return response;
+    } catch (error) {
+      console.error('Get roles failed:', error);
+      throw new Error('Falha ao buscar roles');
+    }
+  }
+
+  async getPermissions(): Promise<PermissionsResponse> {
+    try {
+      const response = await this.apiClient.get<PermissionsResponse>('/permissions');
+      return response;
+    } catch (error) {
+      console.error('Get permissions failed:', error);
+      throw new Error('Falha ao buscar permissões');
     }
   }
 } 

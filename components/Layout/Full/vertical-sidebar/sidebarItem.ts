@@ -50,6 +50,12 @@ const sidebarItem: menu[] = [
     to: "/admins",
     permission: "admin-read",
   },
+  {
+    title: "Roles",
+    icon: "shield-user-rounded-line-duotone",
+    to: "/roles",
+    permission: "role-assign",
+  },
   { header: "ui" },
   {
     title: "Alert",

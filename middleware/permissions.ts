@@ -19,12 +19,12 @@ export default defineNuxtRouteMiddleware((to) => {
     '/admins/create': ['admin-create'],
     '/admins/edit': ['admin-update'],
     '/admins/delete': ['admin-delete'],
-    '/chat': ['chat-read'],
-    '/chat/manage': ['chat-manage'],
-    '/roles': ['role-read'],
+    '/roles': ['role-assign'],
     '/roles/create': ['role-create'],
     '/roles/edit': ['role-update'],
     '/roles/delete': ['role-delete'],
+    '/chat': ['chat-read'],
+    '/chat/manage': ['chat-manage'],
     '/roles/assign': ['role-assign'],
   }
 

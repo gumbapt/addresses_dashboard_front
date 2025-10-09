@@ -22,8 +22,12 @@ export interface Admin {
 export interface Role {
   id: number;
   name: string;
+  slug: string;
   description: string;
+  is_active: boolean;
   permissions: Permission[];
+  created_at: string;
+  updated_at: string;
 }
 
 export interface LoginResponse {
@@ -71,4 +75,12 @@ export interface UsersResponse {
 export interface AdminsResponse {
   admins: Admin[];
   pagination: Pagination;
+}
+
+// A API de roles retorna um array direto, não um objeto com paginação
+export type RolesResponse = Role[];
+
+export interface PermissionsResponse {
+  success: boolean;
+  data: Permission[];
 } 

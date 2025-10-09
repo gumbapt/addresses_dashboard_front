@@ -1,5 +1,5 @@
 import type { IAuthService } from '~/types/domain';
-import type { LoginResponse, Admin, ApiResponse, UsersResponse, AdminsResponse } from '~/types/api';
+import type { LoginResponse, Admin, ApiResponse, UsersResponse, AdminsResponse, RolesResponse, PermissionsResponse, Permission } from '~/types/api';
 import { AuthRepository } from '~/infrastructure/repositories/AuthRepository';
 
 export class AuthService implements IAuthService {
@@ -99,6 +99,44 @@ export class AuthService implements IAuthService {
         success: true,
         data: response,
         message: 'Administradores carregados com sucesso'
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      
+      return {
+        success: false,
+        error: errorMessage
+      };
+    }
+  }
+
+  async getRoles(): Promise<ApiResponse<RolesResponse>> {
+    try {
+      const response = await this.authRepository.getRoles();
+      
+      return {
+        success: true,
+        data: response,
+        message: 'Roles carregados com sucesso'
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      
+      return {
+        success: false,
+        error: errorMessage
+      };
+    }
+  }
+
+  async getPermissions(): Promise<ApiResponse<Permission[]>> {
+    try {
+      const response = await this.authRepository.getPermissions();
+      
+      return {
+        success: response.success,
+        data: response.data,
+        message: 'Permissões carregadas com sucesso'
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
