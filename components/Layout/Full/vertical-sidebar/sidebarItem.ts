@@ -34,8 +34,12 @@ const sidebarItem: menu[] = [
   {
     title: "Dashboard",
     icon: "graph-new-linear",
-    to: "/",
-    permission: "dashboard-access", // Permissão customizada para dashboard
+    to: "/dashboard",
+  },
+  {
+    title: "Dashboard Template",
+    icon: "presentation-graph-line-duotone",
+    to: "/dashboard-template",
   },
   { header: "Management" },
   {
