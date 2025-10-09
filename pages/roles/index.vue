@@ -28,6 +28,9 @@ const {
 // Verificar permissões
 const { hasPermission, canAccess } = usePermissions();
 
+// Notificações
+const notification = useNotification();
+
 // Estados reativos para filtros
 const search = ref('');
 const selectedStatus = ref('all');
@@ -130,13 +133,16 @@ const confirmDelete = async () => {
       if (result.success) {
         showDeleteDialog.value = false;
         selectedRole.value = null;
+        notification.success('Role deleted successfully');
         // Recarregar roles após deletar
         await loadRoles();
       } else {
         saveError.value = result.error || 'Failed to delete role';
+        notification.error(result.error || 'Failed to delete role');
       }
     } catch (error) {
       saveError.value = error instanceof Error ? error.message : 'Unexpected error';
+      notification.error(error instanceof Error ? error.message : 'Unexpected error');
     } finally {
       saving.value = false;
     }
@@ -194,14 +200,17 @@ const saveRole = async () => {
           
           if (!permResult.success) {
             saveError.value = permResult.error || 'Failed to update permissions';
+            notification.error(permResult.error || 'Failed to update permissions');
             return;
           }
         }
         
-        // Fechar diálogo
+        // Fechar diálogo e mostrar notificação de sucesso
         showEditDialog.value = false;
+        notification.success('Role updated successfully');
       } else {
         saveError.value = result.error || 'Failed to update role';
+        notification.error(result.error || 'Failed to update role');
         return;
       }
     } else {
@@ -215,10 +224,12 @@ const saveRole = async () => {
       const result = await authService.createRole(createData);
       
       if (result.success) {
-        // Fechar diálogo
+        // Fechar diálogo e mostrar notificação de sucesso
         showAddDialog.value = false;
+        notification.success('Role created successfully');
       } else {
         saveError.value = result.error || 'Failed to create role';
+        notification.error(result.error || 'Failed to create role');
         return;
       }
     }
@@ -227,6 +238,7 @@ const saveRole = async () => {
     await loadRoles();
   } catch (error) {
     saveError.value = error instanceof Error ? error.message : 'Unexpected error';
+    notification.error(error instanceof Error ? error.message : 'Unexpected error');
   } finally {
     saving.value = false;
   }

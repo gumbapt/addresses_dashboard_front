@@ -8,10 +8,12 @@ const loading = ref(false);
 const errorMessage = ref('');
 
 const { login } = useAuth();
+const notification = useNotification();
 
 const handleLogin = async () => {
   if (!email.value || !password.value) {
-    errorMessage.value = 'Por favor, preencha todos os campos';
+    errorMessage.value = 'Please fill in all fields';
+    notification.warning('Please fill in all fields');
     return;
   }
 
@@ -23,13 +25,16 @@ const handleLogin = async () => {
     
     if (result.success) {
       // Login bem-sucedido, redirecionar para dashboard
+      notification.success('Login successful');
       navigateTo('/dashboard');
     } else {
       // Exibir a mensagem de erro específica da API
-      errorMessage.value = result.error || 'Erro ao fazer login';
+      errorMessage.value = result.error || 'Login failed';
+      notification.error(result.error || 'Login failed');
     }
   } catch (error) {
-    errorMessage.value = 'Erro inesperado';
+    errorMessage.value = 'Unexpected error';
+    notification.error('Unexpected error');
   } finally {
     loading.value = false;
   }

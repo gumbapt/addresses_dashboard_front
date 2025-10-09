@@ -11,6 +11,9 @@ export const useAuth = () => {
   
   // Composable de permissões
   const { setRoles, setPermissions, clearPermissions, loadPermissionsFromStorage } = usePermissions();
+  
+  // Notificações
+  const notification = useNotification();
 
   // Função de login
   const login = async (email: string, password: string) => {
@@ -58,6 +61,7 @@ export const useAuth = () => {
   const logout = async () => {
     try {
       await authService.logout();
+      notification.info('Logged out successfully');
     } finally {
       user.value = null;
       

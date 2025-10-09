@@ -29,7 +29,10 @@ useHead({
                 <ChatWidget />
                 
                 <!-- Debug Button (apenas em desenvolvimento) -->
-                <DebugButton />
+              <!--   <DebugButton /> -->
+                
+                <!-- Notification Snackbar -->
+                <NotificationSnackbarSimple />
             </v-main>
         </v-app>
     </v-locale-provider>
