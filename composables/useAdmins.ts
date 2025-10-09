@@ -23,10 +23,10 @@ export const useAdmins = () => {
         admins.value = result.data.admins;
         pagination.value = result.data.pagination;
       } else {
-        error.value = result.error || 'Erro ao carregar administradores';
+        error.value = result.error || 'Failed to load administrators';
       }
     } catch (err) {
-      error.value = 'Erro inesperado ao carregar administradores';
+      error.value = 'Unexpected error loading administrators';
     } finally {
       loading.value = false;
     }

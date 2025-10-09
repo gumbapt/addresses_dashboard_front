@@ -21,10 +21,10 @@ export const useAvailablePermissions = () => {
       if (result.success && result.data) {
         permissions.value = result.data;
       } else {
-        error.value = result.error || 'Erro ao carregar permissões';
+        error.value = result.error || 'Failed to load permissions';
       }
     } catch (err) {
-      error.value = 'Erro inesperado ao carregar permissões';
+      error.value = 'Unexpected error loading permissions';
     } finally {
       loading.value = false;
     }

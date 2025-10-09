@@ -1,5 +1,20 @@
 import type { IAuthService } from '~/types/domain';
-import type { LoginResponse, Admin, ApiResponse, UsersResponse, AdminsResponse, RolesResponse, PermissionsResponse, Permission } from '~/types/api';
+import type { 
+  LoginResponse, 
+  Admin, 
+  ApiResponse, 
+  UsersResponse, 
+  AdminsResponse, 
+  RolesResponse, 
+  PermissionsResponse, 
+  Permission,
+  CreateRoleRequest,
+  UpdateRoleRequest,
+  DeleteRoleRequest,
+  UpdateRolePermissionsRequest,
+  RoleResponse,
+  Role
+} from '~/types/api';
 import { AuthRepository } from '~/infrastructure/repositories/AuthRepository';
 
 export class AuthService implements IAuthService {
@@ -19,11 +34,11 @@ export class AuthService implements IAuthService {
       return {
         success: true,
         data: response,
-        message: 'Login realizado com sucesso'
+        message: 'Login successful'
       };
     } catch (error) {
       // Capturar a mensagem específica de erro da API
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       
       return {
         success: false,
@@ -79,10 +94,10 @@ export class AuthService implements IAuthService {
       return {
         success: true,
         data: response,
-        message: 'Usuários carregados com sucesso'
+        message: 'Users loaded successfully'
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       
       return {
         success: false,
@@ -98,10 +113,10 @@ export class AuthService implements IAuthService {
       return {
         success: true,
         data: response,
-        message: 'Administradores carregados com sucesso'
+        message: 'Administrators loaded successfully'
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       
       return {
         success: false,
@@ -117,10 +132,10 @@ export class AuthService implements IAuthService {
       return {
         success: true,
         data: response,
-        message: 'Roles carregados com sucesso'
+        message: 'Roles loaded successfully'
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       
       return {
         success: false,
@@ -136,10 +151,86 @@ export class AuthService implements IAuthService {
       return {
         success: response.success,
         data: response.data,
-        message: 'Permissões carregadas com sucesso'
+        message: 'Permissions loaded successfully'
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      return {
+        success: false,
+        error: errorMessage
+      };
+    }
+  }
+
+  async createRole(data: CreateRoleRequest): Promise<ApiResponse<Role>> {
+    try {
+      const response = await this.authRepository.createRole(data);
+      
+      return {
+        success: response.success,
+        data: response.data.role,
+        message: 'Role created successfully'
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      return {
+        success: false,
+        error: errorMessage
+      };
+    }
+  }
+
+  async updateRole(data: UpdateRoleRequest): Promise<ApiResponse<Role>> {
+    try {
+      const response = await this.authRepository.updateRole(data);
+      
+      return {
+        success: response.success,
+        data: response.data.role,
+        message: 'Role updated successfully'
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      return {
+        success: false,
+        error: errorMessage
+      };
+    }
+  }
+
+  async deleteRole(data: DeleteRoleRequest): Promise<ApiResponse<boolean>> {
+    try {
+      const response = await this.authRepository.deleteRole(data);
+      
+      return {
+        success: response.success,
+        data: response.success,
+        message: 'Role deleted successfully'
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      return {
+        success: false,
+        error: errorMessage
+      };
+    }
+  }
+
+  async updateRolePermissions(data: UpdateRolePermissionsRequest): Promise<ApiResponse<Role>> {
+    try {
+      const response = await this.authRepository.updateRolePermissions(data);
+      
+      return {
+        success: response.success,
+        data: response.data.role,
+        message: 'Permissions updated successfully'
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       
       return {
         success: false,

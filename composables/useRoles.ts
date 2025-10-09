@@ -21,10 +21,10 @@ export const useRoles = () => {
       if (result.success && result.data) {
         roles.value = result.data;
       } else {
-        error.value = result.error || 'Erro ao carregar roles';
+        error.value = result.error || 'Failed to load roles';
       }
     } catch (err) {
-      error.value = 'Erro inesperado ao carregar roles';
+      error.value = 'Unexpected error loading roles';
     } finally {
       loading.value = false;
     }

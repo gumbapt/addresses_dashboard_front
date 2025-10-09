@@ -1,5 +1,18 @@
 import type { IAuthRepository } from '~/types/domain';
-import type { LoginRequest, LoginResponse, Admin, UsersResponse, AdminsResponse, RolesResponse, PermissionsResponse } from '~/types/api';
+import type { 
+  LoginRequest, 
+  LoginResponse, 
+  Admin, 
+  UsersResponse, 
+  AdminsResponse, 
+  RolesResponse, 
+  PermissionsResponse,
+  CreateRoleRequest,
+  UpdateRoleRequest,
+  DeleteRoleRequest,
+  UpdateRolePermissionsRequest,
+  RoleResponse
+} from '~/types/api';
 import { ApiClient } from '../http/ApiClient';
 import { API_CONFIG } from '~/config/api';
 
@@ -46,7 +59,7 @@ export class AuthRepository implements IAuthRepository {
       return response;
     } catch (error) {
       console.error('Get users failed:', error);
-      throw new Error('Falha ao buscar usuários');
+      throw new Error('Failed to fetch users');
     }
   }
 
@@ -56,7 +69,7 @@ export class AuthRepository implements IAuthRepository {
       return response;
     } catch (error) {
       console.error('Get admins failed:', error);
-      throw new Error('Falha ao buscar administradores');
+      throw new Error('Failed to fetch administrators');
     }
   }
 
@@ -66,7 +79,7 @@ export class AuthRepository implements IAuthRepository {
       return response;
     } catch (error) {
       console.error('Get roles failed:', error);
-      throw new Error('Falha ao buscar roles');
+      throw new Error('Failed to fetch roles');
     }
   }
 
@@ -76,7 +89,47 @@ export class AuthRepository implements IAuthRepository {
       return response;
     } catch (error) {
       console.error('Get permissions failed:', error);
-      throw new Error('Falha ao buscar permissões');
+      throw new Error('Failed to fetch permissions');
+    }
+  }
+
+  async createRole(data: CreateRoleRequest): Promise<RoleResponse> {
+    try {
+      const response = await this.apiClient.post<RoleResponse>('/role/create', data);
+      return response;
+    } catch (error) {
+      console.error('Create role failed:', error);
+      throw new Error('Failed to create role');
+    }
+  }
+
+  async updateRole(data: UpdateRoleRequest): Promise<RoleResponse> {
+    try {
+      const response = await this.apiClient.put<RoleResponse>('/role/update', data);
+      return response;
+    } catch (error) {
+      console.error('Update role failed:', error);
+      throw new Error('Failed to update role');
+    }
+  }
+
+  async deleteRole(data: DeleteRoleRequest): Promise<{ success: boolean }> {
+    try {
+      const response = await this.apiClient.post<{ success: boolean }>('/role/delete', data);
+      return response;
+    } catch (error) {
+      console.error('Delete role failed:', error);
+      throw new Error('Failed to delete role');
+    }
+  }
+
+  async updateRolePermissions(data: UpdateRolePermissionsRequest): Promise<RoleResponse> {
+    try {
+      const response = await this.apiClient.post<RoleResponse>('/role/update-permissions', data);
+      return response;
+    } catch (error) {
+      console.error('Update role permissions failed:', error);
+      throw new Error('Failed to update role permissions');
     }
   }
 } 

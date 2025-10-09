@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import UiChildCard from '@/components/shared/UiChildCard.vue';
+import { AuthService } from '~/services/AuthService';
 
 // Definir middleware de autenticação e permissões
 definePageMeta({
@@ -118,13 +119,27 @@ const viewPermissions = (role: any) => {
   showPermissionsDialog.value = true;
 };
 
-const confirmDelete = () => {
+const confirmDelete = async () => {
   if (selectedRole.value) {
-    // Aqui você implementaria a chamada para deletar na API
-    showDeleteDialog.value = false;
-    selectedRole.value = null;
-    // Recarregar roles após deletar
-    loadRoles();
+    saving.value = true;
+    saveError.value = null;
+    
+    try {
+      const result = await authService.deleteRole({ id: selectedRole.value.id });
+      
+      if (result.success) {
+        showDeleteDialog.value = false;
+        selectedRole.value = null;
+        // Recarregar roles após deletar
+        await loadRoles();
+      } else {
+        saveError.value = result.error || 'Failed to delete role';
+      }
+    } catch (error) {
+      saveError.value = error instanceof Error ? error.message : 'Unexpected error';
+    } finally {
+      saving.value = false;
+    }
   }
 };
 
@@ -146,17 +161,75 @@ const clearFilters = () => {
   selectedStatus.value = 'all';
 };
 
+// Service instance
+const authService = new AuthService();
+
+// Estado para salvar
+const saving = ref(false);
+const saveError = ref<string | null>(null);
+
 // Função para salvar role (criar ou editar)
 const saveRole = async () => {
-  // Aqui você implementaria a chamada para API
-  console.log('Salvando role:', roleForm.value);
+  saving.value = true;
+  saveError.value = null;
   
-  // Fechar diálogo
-  showAddDialog.value = false;
-  showEditDialog.value = false;
-  
-  // Recarregar roles
-  await loadRoles();
+  try {
+    if (selectedRole.value) {
+      // Editando role existente
+      const updateData = {
+        id: selectedRole.value.id,
+        name: roleForm.value.name,
+        description: roleForm.value.description
+      };
+      
+      const result = await authService.updateRole(updateData);
+      
+      if (result.success) {
+        // Atualizar permissões separadamente
+        if (roleForm.value.selectedPermissions.length > 0 || selectedRole.value.permissions?.length > 0) {
+          const permResult = await authService.updateRolePermissions({
+            id: selectedRole.value.id,
+            permissions: roleForm.value.selectedPermissions
+          });
+          
+          if (!permResult.success) {
+            saveError.value = permResult.error || 'Failed to update permissions';
+            return;
+          }
+        }
+        
+        // Fechar diálogo
+        showEditDialog.value = false;
+      } else {
+        saveError.value = result.error || 'Failed to update role';
+        return;
+      }
+    } else {
+      // Criando novo role
+      const createData = {
+        name: roleForm.value.name,
+        description: roleForm.value.description,
+        permissions: roleForm.value.selectedPermissions
+      };
+      
+      const result = await authService.createRole(createData);
+      
+      if (result.success) {
+        // Fechar diálogo
+        showAddDialog.value = false;
+      } else {
+        saveError.value = result.error || 'Failed to create role';
+        return;
+      }
+    }
+    
+    // Recarregar roles
+    await loadRoles();
+  } catch (error) {
+    saveError.value = error instanceof Error ? error.message : 'Unexpected error';
+  } finally {
+    saving.value = false;
+  }
 };
 
 // Carregar roles quando a página for montada
@@ -456,8 +529,11 @@ onMounted(() => {
             {{ roleForm.selectedPermissions.length }} permissões selecionadas
           </v-chip>
           <v-spacer></v-spacer>
-          <v-btn @click="showAddDialog = false">Cancelar</v-btn>
-          <v-btn color="primary" @click="saveRole">Criar Role</v-btn>
+          <v-alert v-if="saveError" type="error" variant="tonal" density="compact" class="mr-4">
+            {{ saveError }}
+          </v-alert>
+          <v-btn @click="showAddDialog = false" :disabled="saving">Cancelar</v-btn>
+          <v-btn color="primary" @click="saveRole" :loading="saving" :disabled="saving">Criar Role</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -550,8 +626,11 @@ onMounted(() => {
             {{ roleForm.selectedPermissions.length }} permissões selecionadas
           </v-chip>
           <v-spacer></v-spacer>
-          <v-btn @click="showEditDialog = false">Cancelar</v-btn>
-          <v-btn color="primary" @click="saveRole">Salvar Alterações</v-btn>
+          <v-alert v-if="saveError" type="error" variant="tonal" density="compact" class="mr-4">
+            {{ saveError }}
+          </v-alert>
+          <v-btn @click="showEditDialog = false" :disabled="saving">Cancelar</v-btn>
+          <v-btn color="primary" @click="saveRole" :loading="saving" :disabled="saving">Salvar Alterações</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -562,11 +641,14 @@ onMounted(() => {
         <v-card-text>
           <p>Tem certeza que deseja excluir este role?</p>
           <p><strong>{{ selectedRole?.name }}</strong></p>
+          <v-alert v-if="saveError" type="error" variant="tonal" density="compact" class="mt-4">
+            {{ saveError }}
+          </v-alert>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn @click="showDeleteDialog = false">Cancelar</v-btn>
-          <v-btn color="error" @click="confirmDelete">Excluir</v-btn>
+          <v-btn @click="showDeleteDialog = false" :disabled="saving">Cancelar</v-btn>
+          <v-btn color="error" @click="confirmDelete" :loading="saving" :disabled="saving">Excluir</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>

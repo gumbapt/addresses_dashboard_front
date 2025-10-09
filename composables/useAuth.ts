@@ -43,13 +43,13 @@ export const useAuth = () => {
         // Retornar a mensagem de erro específica da API
         return { 
           success: false, 
-          error: result.error || 'Credenciais inválidas' 
+          error: result.error || 'Invalid credentials' 
         };
       }
     } catch (error) {
       return { 
         success: false, 
-        error: error instanceof Error ? error.message : 'Erro ao fazer login' 
+        error: error instanceof Error ? error.message : 'Login failed' 
       };
     }
   }

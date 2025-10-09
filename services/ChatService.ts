@@ -34,7 +34,7 @@ export class ChatService {
         return response.data;
       }
       
-      throw new Error('Resposta inválida da API ao criar chat');
+      throw new Error('Invalid API response when creating chat');
     } catch (error) {
       console.error('ChatService - createPrivateChat error:', error);
       throw error;
@@ -53,7 +53,7 @@ export class ChatService {
         return response.data;
       }
       
-      throw new Error('Resposta inválida da API ao criar chat em grupo');
+      throw new Error('Invalid API response when creating group chat');
     } catch (error) {
       console.error('ChatService - createGroupChat error:', error);
       throw error;
@@ -67,11 +67,11 @@ export class ChatService {
     try {
       // Validação básica
       if (!content.trim()) {
-        throw new Error('Mensagem não pode estar vazia');
+        throw new Error('Message cannot be empty');
       }
 
       if (content.length > 1000) {
-        throw new Error('Mensagem muito longa (máximo 1000 caracteres)');
+        throw new Error('Message too long (maximum 1000 characters)');
       }
 
       const response: ChatMessageSendResponse = await this.chatRepository.sendMessageToUser(content.trim(), otherUserId, otherUserType);
@@ -81,7 +81,7 @@ export class ChatService {
         return response.data;
       }
       
-      throw new Error('Resposta inválida da API ao enviar mensagem para usuário');
+      throw new Error('Invalid API response when sending message to user');
     } catch (error) {
       console.error('ChatService - sendMessageToUser error:', error);
       throw error;
@@ -95,11 +95,11 @@ export class ChatService {
     try {
       // Validação básica
       if (!content.trim()) {
-        throw new Error('Mensagem não pode estar vazia');
+        throw new Error('Message cannot be empty');
       }
 
       if (content.length > 1000) {
-        throw new Error('Mensagem muito longa (máximo 1000 caracteres)');
+        throw new Error('Message too long (maximum 1000 characters)');
       }
 
       const response: MessageSendResponse = await this.chatRepository.sendMessageToChat(chatId, content.trim());
@@ -109,7 +109,7 @@ export class ChatService {
         return response.data;
       }
       
-      throw new Error('Resposta inválida da API ao enviar mensagem para chat');
+      throw new Error('Invalid API response when sending message to chat');
     } catch (error) {
       console.error('ChatService - sendMessageToChat error:', error);
       throw error;
@@ -133,7 +133,7 @@ export class ChatService {
         if (wrappedResponse.success && wrappedResponse.data) {
           return wrappedResponse.data;
         }
-        throw new Error('Resposta inválida da API ao buscar conversa');
+        throw new Error('Invalid API response when fetching conversation');
       }
       
       // Se não tem wrapper, verificar se é diretamente o formato esperado
@@ -141,7 +141,7 @@ export class ChatService {
         return response as MessagesResponse;
       }
       
-      throw new Error('Formato de resposta inesperado da API');
+      throw new Error('Unexpected API response format');
     } catch (error) {
       console.error('ChatService - getConversation error:', error);
       throw error;
@@ -165,7 +165,7 @@ export class ChatService {
         if (wrappedResponse.success && wrappedResponse.data) {
           return wrappedResponse.data;
         }
-        throw new Error('Resposta inválida da API ao buscar chats');
+        throw new Error('Invalid API response when fetching chats');
       }
       
       // Se não tem wrapper, verificar se é diretamente o formato esperado
@@ -173,7 +173,7 @@ export class ChatService {
         return response as ChatsResponse;
       }
       
-      throw new Error('Formato de resposta inesperado da API');
+      throw new Error('Unexpected API response format');
     } catch (error) {
       console.error('ChatService - getChats error:', error);
       throw error;
@@ -197,7 +197,7 @@ export class ChatService {
         if (wrappedResponse.success && wrappedResponse.data) {
           return wrappedResponse.data;
         }
-        throw new Error('Resposta inválida da API ao buscar mensagens do chat');
+        throw new Error('Invalid API response when fetching chat messages');
       }
       
       // Se não tem wrapper, verificar se é diretamente o formato esperado
@@ -205,7 +205,7 @@ export class ChatService {
         return response as MessagesResponse;
       }
       
-      throw new Error('Formato de resposta inesperado da API');
+      throw new Error('Unexpected API response format');
     } catch (error) {
       console.error('ChatService - getChatMessages error:', error);
       throw error;

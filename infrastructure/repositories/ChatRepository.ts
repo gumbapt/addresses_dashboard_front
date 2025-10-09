@@ -40,7 +40,7 @@ export class ChatRepository {
       return response;
     } catch (error) {
       console.error('ChatRepository - sendMessageToUser error:', error);
-      throw new Error('Erro ao enviar mensagem');
+      throw new Error('Failed to send message');
     }
   }
 
@@ -54,7 +54,7 @@ export class ChatRepository {
       return response;
     } catch (error) {
       console.error('ChatRepository - getConversation error:', error);
-      throw new Error('Erro ao buscar conversa');
+      throw new Error('Failed to fetch conversation');
     }
   }
 
@@ -68,7 +68,7 @@ export class ChatRepository {
       return response;
     } catch (error) {
       console.error('ChatRepository - getChats error:', error);
-      throw new Error('Erro ao buscar chats');
+      throw new Error('Failed to fetch chats');
     }
   }
 
@@ -82,7 +82,7 @@ export class ChatRepository {
       return response;
     } catch (error) {
       console.error('ChatRepository - getChatMessages error:', error);
-      throw new Error('Erro ao buscar mensagens do chat');
+      throw new Error('Failed to fetch chat messages');
     }
   }
 
@@ -98,7 +98,7 @@ export class ChatRepository {
       return response;
     } catch (error) {
       console.error('ChatRepository - sendMessageToChat error:', error);
-      throw new Error('Erro ao enviar mensagem');
+      throw new Error('Failed to send message');
     }
   }
 
@@ -114,7 +114,7 @@ export class ChatRepository {
       return response;
     } catch (error) {
       console.error('ChatRepository - createPrivateChat error:', error);
-      throw new Error('Erro ao criar chat privado');
+      throw new Error('Failed to create private chat');
     }
   }
 
@@ -131,7 +131,7 @@ export class ChatRepository {
       return response;
     } catch (error) {
       console.error('ChatRepository - createGroupChat error:', error);
-      throw new Error('Erro ao criar chat em grupo');
+      throw new Error('Failed to create group chat');
     }
   }
 
@@ -143,7 +143,7 @@ export class ChatRepository {
       const response = await this.chatApiClient.get<ChatChannel[]>('/chat/channels');
       return response;
     } catch (error) {
-      throw new Error('Erro ao buscar canais do chat');
+      throw new Error('Failed to fetch chat channels');
     }
   }
 
@@ -154,7 +154,7 @@ export class ChatRepository {
     try {
       await this.chatApiClient.post(`/chat/channels/${channelId}/read`);
     } catch (error) {
-      throw new Error('Erro ao marcar mensagens como lidas');
+      throw new Error('Failed to mark messages as read');
     }
   }
 
@@ -166,7 +166,7 @@ export class ChatRepository {
       const response = await this.chatApiClient.get<any[]>('/chat/users/online');
       return response;
     } catch (error) {
-      throw new Error('Erro ao buscar usuários online');
+      throw new Error('Failed to fetch online users');
     }
   }
 } 

@@ -83,4 +83,34 @@ export type RolesResponse = Role[];
 export interface PermissionsResponse {
   success: boolean;
   data: Permission[];
+}
+
+// Request types for Role CRUD
+export interface CreateRoleRequest {
+  name: string;
+  description: string;
+  permissions?: number[];
+}
+
+export interface UpdateRoleRequest {
+  id: number;
+  name: string;
+  description: string;
+}
+
+export interface DeleteRoleRequest {
+  id: number;
+}
+
+export interface UpdateRolePermissionsRequest {
+  id: number;
+  permissions: number[];
+}
+
+// Response types for Role CRUD
+export interface RoleResponse {
+  success: boolean;
+  data: {
+    role: Role;
+  };
 } 

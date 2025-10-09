@@ -32,7 +32,7 @@ export const useChatManager = () => {
       chats.value = response.chats || [];
       pagination.value = response.pagination;
     } catch (err) {
-      error.value = err instanceof Error ? err.message : 'Erro ao carregar chats';
+      error.value = err instanceof Error ? err.message : 'Failed to load chats';
       console.error('Load chats error:', err);
     } finally {
       loading.value = false;
@@ -52,7 +52,7 @@ export const useChatManager = () => {
       
       // Verificar se o chat tem ID
       if (!chat || !chat.id) {
-        throw new Error('Chat criado sem ID válido');
+        throw new Error('Chat created without valid ID');
       }
       
       // Adicionar à lista de chats se não existir
@@ -71,7 +71,7 @@ export const useChatManager = () => {
       // Retornar o chat criado
       return chat;
     } catch (err) {
-      error.value = err instanceof Error ? err.message : 'Erro ao iniciar chat';
+      error.value = err instanceof Error ? err.message : 'Failed to start chat';
       console.error('Start chat error:', err);
       throw err;
     } finally {
@@ -101,7 +101,7 @@ export const useChatManager = () => {
         messages.value.unshift(...response.messages);
       }
     } catch (err) {
-      error.value = err instanceof Error ? err.message : 'Erro ao carregar mensagens';
+      error.value = err instanceof Error ? err.message : 'Failed to load messages';
       console.error('Load chat messages error:', err);
     } finally {
       loading.value = false;
@@ -135,7 +135,7 @@ export const useChatManager = () => {
 
       return message;
     } catch (err) {
-      error.value = err instanceof Error ? err.message : 'Erro ao enviar mensagem';
+      error.value = err instanceof Error ? err.message : 'Failed to send message';
       console.error('Send message error:', err);
       throw err;
     }
@@ -163,7 +163,7 @@ export const useChatManager = () => {
 
       return response;
     } catch (err) {
-      error.value = err instanceof Error ? err.message : 'Erro ao enviar mensagem';
+      error.value = err instanceof Error ? err.message : 'Failed to send message';
       console.error('Send message to user error:', err);
       throw err;
     }

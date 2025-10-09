@@ -23,10 +23,10 @@ export const useUsers = () => {
         users.value = result.data.users;
         pagination.value = result.data.pagination;
       } else {
-        error.value = result.error || 'Erro ao carregar usuários';
+        error.value = result.error || 'Failed to load users';
       }
     } catch (err) {
-      error.value = 'Erro inesperado ao carregar usuários';
+      error.value = 'Unexpected error loading users';
     } finally {
       loading.value = false;
     }
