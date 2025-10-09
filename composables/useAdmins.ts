@@ -20,22 +20,16 @@ export const useAdmins = () => {
       const result = await adminService.getAdmins(page, perPage);
       
       if (result.success && result.data) {
-        // A API retorna um array direto em result.data
-        admins.value = result.data;
-        // Criar paginação mock já que a API não retorna paginação
-        pagination.value = {
-          current_page: page,
-          per_page: perPage,
-          total: result.data.length,
-          last_page: 1,
-          from: 1,
-          to: result.data.length
-        };
+        // A API retorna { success: true, data: [...], pagination: {...} }
+        admins.value = result.data.data || [];
+        pagination.value = result.data.pagination || null;
       } else {
         error.value = result.error || 'Failed to load administrators';
+        admins.value = [];
       }
     } catch (err) {
       error.value = 'Unexpected error loading administrators';
+      admins.value = [];
     } finally {
       loading.value = false;
     }

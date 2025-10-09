@@ -145,4 +145,5 @@ export interface AdminResponse {
 export interface AdminsListResponse {
   success: boolean;
   data: Admin[];
+  pagination: Pagination;
 } 

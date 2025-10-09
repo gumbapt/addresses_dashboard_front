@@ -453,10 +453,17 @@ onMounted(() => {
             </tbody>
           </v-table>
 
-          <!-- Paginação -->
-          <div v-if="pagination" class="d-flex align-center justify-space-between mt-4">
+          <!-- Info sobre total (quando não há paginação) -->
+          <div v-if="pagination && pagination.last_page === 1" class="d-flex justify-end mt-4">
             <div class="text-body-2 text-medium-emphasis">
-              Mostrando {{ pagination.from }} a {{ pagination.to }} de {{ pagination.total }} administradores
+              Total: {{ pagination.total }} administrators
+            </div>
+          </div>
+
+          <!-- Paginação (quando há múltiplas páginas) -->
+          <div v-if="pagination && pagination.last_page > 1" class="d-flex align-center justify-space-between mt-4">
+            <div class="text-body-2 text-medium-emphasis">
+              Showing {{ pagination.from }} to {{ pagination.to }} of {{ pagination.total }} administrators
             </div>
             
             <div class="d-flex align-center gap-2">
@@ -477,7 +484,7 @@ onMounted(() => {
                 variant="text"
                 :disabled="!canGoPrev"
                 @click="prevPage"
-                title="Página anterior"
+                title="Previous page"
               >
                 <v-icon>mdi-chevron-left</v-icon>
               </v-btn>
@@ -501,7 +508,7 @@ onMounted(() => {
                 variant="text"
                 :disabled="!canGoNext"
                 @click="nextPage"
-                title="Próxima página"
+                title="Next page"
               >
                 <v-icon>mdi-chevron-right</v-icon>
               </v-btn>

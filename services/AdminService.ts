@@ -1,6 +1,7 @@
 import type {
   Admin,
   AdminsListResponse,
+  AdminsResponse,
   ApiResponse,
   CreateAdminRequest,
   UpdateAdminRequest,
@@ -15,14 +16,14 @@ export class AdminService {
     this.adminRepository = new AdminRepository();
   }
 
-  async getAdmins(page: number = 1, perPage: number = 15): Promise<ApiResponse<Admin[]>> {
+  async getAdmins(page: number = 1, perPage: number = 15): Promise<ApiResponse<AdminsListResponse>> {
     try {
       const response = await this.adminRepository.getAdmins(page, perPage);
       
-      // A API retorna { success: true, data: [...] }
+      // A API retorna { success: true, data: [...], pagination: {...} }
       return {
         success: response.success,
-        data: response.data,
+        data: response,
         message: 'Administrators loaded successfully'
       };
     } catch (error) {
