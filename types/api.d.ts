@@ -146,4 +146,55 @@ export interface AdminsListResponse {
   success: boolean;
   data: Admin[];
   pagination: Pagination;
+}
+
+// Domain types
+export interface Domain {
+  id: number;
+  name: string;
+  slug: string;
+  domain_url: string;
+  site_id: string;
+  api_key: string;
+  status: string;
+  timezone: string;
+  is_active: boolean;
+  wordpress_version?: string;
+  plugin_version?: string;
+  settings?: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DomainsListResponse {
+  success: boolean;
+  data: Domain[];
+  pagination: Pagination;
+}
+
+export interface DomainResponse {
+  success: boolean;
+  message?: string;
+  data: Domain;
+}
+
+export interface CreateDomainRequest {
+  name: string;
+  domain_url: string;
+  site_id?: string;
+  timezone?: string;
+  wordpress_version?: string;
+  plugin_version?: string;
+  settings?: Record<string, any>;
+}
+
+export interface UpdateDomainRequest {
+  name?: string;
+  domain_url?: string;
+  site_id?: string;
+  timezone?: string;
+  wordpress_version?: string;
+  plugin_version?: string;
+  settings?: Record<string, any>;
+  is_active?: boolean;
 } 

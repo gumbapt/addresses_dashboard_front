@@ -60,6 +60,12 @@ const sidebarItem: menu[] = [
     to: "/roles",
     permission: "role-assign",
   },
+  {
+    title: "Domains",
+    icon: "global-outline",
+    to: "/domains",
+    permission: "domain-read",
+  },
   { header: "ui" },
   {
     title: "Alert",

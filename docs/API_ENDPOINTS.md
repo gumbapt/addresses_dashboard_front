@@ -276,6 +276,155 @@ Status: 404
 Status: 500
 ```
 
+## Domains Management
+
+### List Domains
+```
+GET /api/admin/domains?page=1&per_page=15&search={query}&is_active={boolean}
+Authorization: Bearer {token}
+
+Response:
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "name": "SmarterHome ISP",
+      "slug": "smarterhome-isp",
+      "domain_url": "api.smarterhome.com",
+      "site_id": "wp-prod-sh-001",
+      "api_key": "dmn_live_xxxxxxxxxxx",
+      "status": "active",
+      "timezone": "America/New_York",
+      "is_active": true,
+      "wordpress_version": "6.8.3",
+      "plugin_version": "2.0.0",
+      "settings": {},
+      "created_at": "2025-10-11 10:00:00",
+      "updated_at": "2025-10-11 10:00:00"
+    }
+  ],
+  "pagination": {
+    "total": 50,
+    "per_page": 15,
+    "current_page": 1,
+    "last_page": 4,
+    "from": 1,
+    "to": 15
+  }
+}
+```
+
+### Get Single Domain
+```
+GET /api/admin/domains/{id}
+Authorization: Bearer {token}
+
+Response:
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "name": "SmarterHome ISP",
+    ...
+  }
+}
+```
+
+### Create Domain
+```
+POST /api/admin/domains
+Authorization: Bearer {token}
+Content-Type: application/json
+
+Request:
+{
+  "name": "New ISP Platform",
+  "domain_url": "api.newisp.com",
+  "site_id": "wp-prod-newisp-001", // Optional
+  "timezone": "America/New_York", // Optional, default: UTC
+  "wordpress_version": "6.8.3", // Optional
+  "plugin_version": "2.0.0", // Optional
+  "settings": {} // Optional
+}
+
+Response:
+{
+  "success": true,
+  "message": "Domain created successfully",
+  "data": {
+    "id": 5,
+    "name": "New ISP Platform",
+    "slug": "new-isp-platform", // Auto-generated
+    "api_key": "dmn_live_xxxxxxxxxxx", // Auto-generated
+    "is_active": true,
+    ...
+  }
+}
+```
+
+### Update Domain
+```
+PUT /api/admin/domains/{id}
+Authorization: Bearer {token}
+Content-Type: application/json
+
+Request:
+{
+  "name": "Updated Name", // Optional
+  "domain_url": "api.updated.com", // Optional
+  "site_id": "wp-prod-updated-001", // Optional
+  "timezone": "UTC", // Optional
+  "wordpress_version": "6.8.4", // Optional
+  "plugin_version": "2.1.0", // Optional
+  "is_active": false, // Optional
+  "settings": {} // Optional
+}
+
+Response:
+{
+  "success": true,
+  "message": "Domain updated successfully",
+  "data": {
+    "id": 5,
+    "name": "Updated Name",
+    "slug": "updated-name", // Auto-regenerated
+    ...
+  }
+}
+```
+
+### Delete Domain
+```
+DELETE /api/admin/domains/{id}
+Authorization: Bearer {token}
+
+Response:
+{
+  "success": true,
+  "message": "Domain deleted successfully"
+}
+```
+
+### Regenerate API Key
+```
+POST /api/admin/domains/{id}/regenerate-api-key
+Authorization: Bearer {token}
+
+Response:
+{
+  "success": true,
+  "data": {
+    "id": 5,
+    "name": "Domain Name",
+    "api_key": "dmn_live_new_key_xxxxxxxx",
+    ...
+  }
+}
+
+Note: The old API key will be immediately invalidated
+```
+
 ## Permission Required by Endpoint
 
 | Endpoint | Permission Required |
@@ -288,6 +437,12 @@ Status: 500
 | POST /role/delete | `role-delete` |
 | POST /role/update-permissions | `role-manage` |
 | GET /permissions | `role-read` or `role-manage` |
+| GET /domains | `domain-read` |
+| GET /domains/{id} | `domain-read` |
+| POST /domains | `domain-create` |
+| PUT /domains/{id} | `domain-update` |
+| DELETE /domains/{id} | `domain-delete` |
+| POST /domains/{id}/regenerate-api-key | `domain-update` |
 
 ## Notes
 
