@@ -379,6 +379,16 @@ onMounted(() => {
                       icon
                       size="small"
                       variant="text"
+                      color="success"
+                      @click="navigateTo(`/domains/${domain.id}/dashboard`)"
+                      title="View Dashboard"
+                    >
+                      <v-icon>mdi-chart-box</v-icon>
+                    </v-btn>
+                    <v-btn
+                      icon
+                      size="small"
+                      variant="text"
                       color="info"
                       @click="showApiKey(domain)"
                       title="View API Key"

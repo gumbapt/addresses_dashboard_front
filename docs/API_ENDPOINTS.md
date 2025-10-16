@@ -425,6 +425,117 @@ Response:
 Note: The old API key will be immediately invalidated
 ```
 
+## Reports Management
+
+### List Reports
+```
+GET /api/admin/reports?page={page}&per_page={perPage}&domain_id={id}&status={status}&start_date={date}&end_date={date}
+Authorization: Bearer {token}
+
+Response:
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "domain_id": 5,
+      "report_date": "2025-10-15",
+      "status": "processed",
+      "data_version": "1.0",
+      "created_at": "2025-10-15 10:00:00",
+      "updated_at": "2025-10-15 10:05:00"
+    }
+  ],
+  "meta": {
+    "total": 100,
+    "per_page": 15,
+    "current_page": 1,
+    "last_page": 7,
+    "from": 1,
+    "to": 15
+  }
+}
+
+Query Parameters:
+- page: Page number (default: 1)
+- per_page: Items per page (min: 1, max: 100, default: 15)
+- domain_id: Filter by specific domain
+- status: Filter by status (pending, processing, processed, failed)
+- start_date: Filter reports from this date (YYYY-MM-DD)
+- end_date: Filter reports until this date (YYYY-MM-DD)
+```
+
+### Get Single Report
+```
+GET /api/admin/reports/{id}
+Authorization: Bearer {token}
+
+Response:
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "domain_id": 5,
+    "report_date": "2025-10-15",
+    "status": "processed",
+    "data_version": "1.0",
+    "raw_data": {
+      "source": {"domain": "test.com"},
+      "metadata": {"report_date": "2025-10-13"},
+      "summary": {"total_requests": 100}
+    },
+    "processed_data": {
+      "metrics": {...}
+    },
+    "error_message": null,
+    "created_at": "2025-10-15 10:00:00",
+    "updated_at": "2025-10-15 10:05:00",
+    "domain": {
+      "id": 5,
+      "name": "example.com",
+      ...
+    }
+  }
+}
+```
+
+### Get Recent Reports
+```
+GET /api/admin/reports/recent
+Authorization: Bearer {token}
+
+Response:
+{
+  "success": true,
+  "data": [
+    // Array of up to 10 most recent reports
+    {
+      "id": 1,
+      "domain_id": 5,
+      "report_date": "2025-10-15",
+      "status": "processed",
+      "data_version": "1.0",
+      "created_at": "2025-10-15 10:00:00",
+      "updated_at": "2025-10-15 10:05:00"
+    }
+  ]
+}
+
+Note: Returns maximum 10 most recent reports ordered by creation date
+```
+
+### Report Not Found
+```
+GET /api/admin/reports/99999
+
+Response:
+{
+  "success": false,
+  "message": "Report not found"
+}
+Status: 404
+```
+
 ## Permission Required by Endpoint
 
 | Endpoint | Permission Required |
@@ -443,6 +554,9 @@ Note: The old API key will be immediately invalidated
 | PUT /domains/{id} | `domain-update` |
 | DELETE /domains/{id} | `domain-delete` |
 | POST /domains/{id}/regenerate-api-key | `domain-update` |
+| GET /reports | `report-read` |
+| GET /reports/{id} | `report-read` |
+| GET /reports/recent | `report-read` |
 
 ## Notes
 

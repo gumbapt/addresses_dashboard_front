@@ -66,6 +66,12 @@ const sidebarItem: menu[] = [
     to: "/domains",
     permission: "domain-read",
   },
+  {
+    title: "Reports",
+    icon: "chart-histogram-linear",
+    to: "/reports",
+    permission: "report-read",
+  },
   { header: "ui" },
   {
     title: "Alert",

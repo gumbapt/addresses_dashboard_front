@@ -27,12 +27,31 @@ export default defineNuxtRouteMiddleware((to) => {
     '/domains/create': ['domain-create'],
     '/domains/edit': ['domain-update'],
     '/domains/delete': ['domain-delete'],
+    '/reports': ['report-read'],
+    '/reports/view': ['report-read'],
     '/chat': ['chat-read'],
     '/chat/manage': ['chat-manage'],
     '/roles/assign': ['role-assign'],
   }
 
-  const requiredPermissions = routePermissions[to.path]
+  // Verificar rotas dinâmicas (com parâmetros)
+  let requiredPermissions = routePermissions[to.path]
+
+  // Se não encontrou permissões exatas, verificar padrões de rota
+  if (!requiredPermissions) {
+    // Domain dashboard route: /domains/:id/dashboard
+    if (to.path.match(/^\/domains\/\d+\/dashboard$/)) {
+      requiredPermissions = ['domain-read', 'report-read']
+    }
+    // Domain reports route: /domains/:id/reports
+    if (to.path.match(/^\/domains\/\d+\/reports$/)) {
+      requiredPermissions = ['domain-read', 'report-read']
+    }
+    // Report dashboard route: /reports/:id/dashboard
+    if (to.path.match(/^\/reports\/\d+\/dashboard$/)) {
+      requiredPermissions = ['report-read']
+    }
+  }
 
   // Se a rota não tem permissões definidas, permitir acesso
   if (!requiredPermissions || requiredPermissions.length === 0) {

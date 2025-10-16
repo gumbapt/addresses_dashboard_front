@@ -197,4 +197,49 @@ export interface UpdateDomainRequest {
   plugin_version?: string;
   settings?: Record<string, any>;
   is_active?: boolean;
-} 
+}
+
+// Report types
+export interface Report {
+  id: number;
+  domain_id: number;
+  report_date: string;
+  status: 'pending' | 'processing' | 'processed' | 'failed';
+  data_version: string;
+  raw_data?: Record<string, any>;
+  processed_data?: Record<string, any>;
+  error_message?: string;
+  created_at: string;
+  updated_at: string;
+  domain?: Domain;
+}
+
+export interface ReportMeta {
+  total: number;
+  per_page: number;
+  current_page: number;
+  last_page: number;
+  from?: number;
+  to?: number;
+}
+
+export interface ReportsListResponse {
+  success: boolean;
+  data: Report[];
+  meta: ReportMeta;
+}
+
+export interface ReportResponse {
+  success: boolean;
+  message?: string;
+  data: Report;
+}
+
+export interface ReportFilters {
+  domain_id?: number;
+  status?: string;
+  start_date?: string;
+  end_date?: string;
+  page?: number;
+  per_page?: number;
+}
