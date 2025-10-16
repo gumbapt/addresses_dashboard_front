@@ -13,28 +13,24 @@ const domainId = computed(() => parseInt(route.params.id as string));
 
 // Usar composables
 const { 
-  reportData, 
+  reportData,
+  aggregatedData,
   loading, 
   error, 
-  loadDashboardStats, 
-  setAllReportsData,
+  loadDashboardStats,
+  loadAggregatedStats,
   providerChartData, 
   topStatesChartData, 
   speedByStateChartData, 
   technologyChartData, 
-  topCards,
-  aggregatedProviderData,
-  aggregatedStatesData,
-  aggregatedSpeedData,
-  aggregatedTechnologyData,
-  aggregatedTopCards
+  topCards
 } = useDomainDashboard();
 const { formattedReports, loading: reportsLoading, loadReports } = useReports();
 const { domains: allDomains, loadDomains } = useDomains();
 
 // Estados
 const selectedReportId = ref<number | string>('all');
-const showAllReports = ref(true);
+const showAllReports = ref(false);
 
 // Domain info
 const currentDomain = computed(() => {
@@ -58,72 +54,44 @@ const reportSelectOptions = computed(() => {
 // Report selecionado
 const selectedReport = computed(() => {
   if (selectedReportId.value === 'all') {
-    return { id: 'all', reportDate: 'All Reports', statusLabel: 'Aggregated' };
+    return { 
+      id: 'all', 
+      reportDate: 'All Reports Combined', 
+      statusLabel: 'Aggregated'
+    };
   }
   return domainReports.value.find((r: any) => r.id === selectedReportId.value);
 });
 
-// Dados a serem exibidos (single ou aggregated)
-const displayChartData = computed(() => {
-  if (selectedReportId.value === 'all') {
-    return {
-      provider: aggregatedProviderData.value,
-      states: aggregatedStatesData.value,
-      speed: aggregatedSpeedData.value,
-      technology: aggregatedTechnologyData.value,
-      cards: aggregatedTopCards.value
-    };
+// Info para display
+const displayInfo = computed(() => {
+  if (selectedReportId.value === 'all' && aggregatedData.value) {
+    return `Showing aggregated data from ${domainReports.value.length} report(s)`;
   }
-  return {
-    provider: providerChartData.value,
-    states: topStatesChartData.value,
-    speed: speedByStateChartData.value,
-    technology: technologyChartData.value,
-    cards: topCards.value
-  };
+  if (selectedReport.value && selectedReportId.value !== 'all') {
+    return `Report Date: ${selectedReport.value.reportDate} | Status: ${selectedReport.value.statusLabel}`;
+  }
+  return '';
 });
 
 // Carregar dados
 onMounted(async () => {
   await loadDomains();
-  const result = await loadReports({ domain_id: domainId.value, per_page: 100 });
+  await loadReports({ domain_id: domainId.value, per_page: 100 });
   
-  // Carregar dados brutos de todos os reports para agregação
-  if (domainReports.value.length > 0) {
-    // Buscar dados completos de todos os reports
-    const reportsWithData: any[] = [];
-    for (const report of domainReports.value) {
-      try {
-        const response = await fetch(`/api/admin/reports/${report.id}`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.data) {
-            reportsWithData.push(data.data);
-          }
-        }
-      } catch (err) {
-        console.error(`Failed to load report ${report.id}:`, err);
-      }
-    }
-    setAllReportsData(reportsWithData);
-    
-    // Auto-selecionar "All Reports"
-    selectedReportId.value = 'all';
-    showAllReports.value = false;
-  }
+  // Auto-carregar dados agregados
+  await loadAggregatedStats(domainId.value);
+  selectedReportId.value = 'all';
 });
 
 // Watch para carregar dados quando mudar o report
 watch(selectedReportId, async (newId) => {
-  if (newId && newId !== 'all') {
+  if (newId === 'all') {
+    showAllReports.value = false;
+    await loadAggregatedStats(domainId.value);
+  } else if (newId) {
     showAllReports.value = false;
     await loadDashboardStats(newId as number);
-  } else if (newId === 'all') {
-    showAllReports.value = false;
   }
 });
 
@@ -142,7 +110,7 @@ const providerChartOptions = computed(() => ({
       fontWeight: 600
     }
   },
-  labels: displayChartData.value.provider.labels,
+  labels: providerChartData.value.labels,
   responsive: [{
     breakpoint: 480,
     options: {
@@ -203,7 +171,7 @@ const topStatesChartOptions = computed(() => ({
     enabled: false
   },
   xaxis: {
-    categories: displayChartData.value.states.categories,
+    categories: topStatesChartData.value.categories,
     labels: {
       style: {
         fontSize: '12px'
@@ -249,7 +217,7 @@ const speedByStateChartOptions = computed(() => ({
     enabled: false
   },
   xaxis: {
-    categories: displayChartData.value.speed.categories,
+    categories: speedByStateChartData.value.categories,
     labels: {
       style: {
         fontSize: '12px'
@@ -282,7 +250,7 @@ const technologyChartOptions = computed(() => ({
       fontWeight: 600
     }
   },
-  labels: displayChartData.value.technology.labels,
+  labels: technologyChartData.value.labels,
   responsive: [{
     breakpoint: 480,
     options: {
@@ -362,8 +330,8 @@ const toggleShowAll = () => {
               Back to Domains
             </v-btn>
             <h1 class="text-h4 font-weight-bold">{{ currentDomain?.name || 'Domain Dashboard' }}</h1>
-            <p class="text-body-1 text-medium-emphasis" v-if="selectedReport">
-              Report Date: {{ selectedReport.reportDate }} | Status: {{ selectedReport.statusLabel }}
+            <p class="text-body-1 text-medium-emphasis" v-if="displayInfo">
+              {{ displayInfo }}
             </p>
           </div>
           
@@ -498,7 +466,7 @@ const toggleShowAll = () => {
       </v-row>
 
       <!-- Dashboard Content -->
-      <div v-else-if="reportData || selectedReportId === 'all'">
+      <div v-else-if="reportData || aggregatedData">
         <!-- Top Cards -->
         <v-row class="mb-4">
           <!-- Total Requests -->
@@ -510,7 +478,7 @@ const toggleShowAll = () => {
                   <v-icon color="primary" size="32">mdi-chart-line</v-icon>
                 </div>
                 <div class="text-h3 font-weight-bold text-primary">
-                  {{ formatNumber(displayChartData.cards.totalRequests) }}
+                  {{ formatNumber(topCards.totalRequests) }}
                 </div>
                 <div class="text-caption text-medium-emphasis mt-1">
                   All time requests
@@ -528,7 +496,7 @@ const toggleShowAll = () => {
                   <v-icon color="success" size="32">mdi-check-circle</v-icon>
                 </div>
                 <div class="text-h3 font-weight-bold text-success">
-                  {{ formatPercentage(displayChartData.cards.successRate) }}
+                  {{ formatPercentage(topCards.successRate) }}
                 </div>
                 <div class="text-caption text-medium-emphasis mt-1">
                   Successful requests
@@ -546,7 +514,7 @@ const toggleShowAll = () => {
                   <v-icon color="info" size="32">mdi-calendar-today</v-icon>
                 </div>
                 <div class="text-h3 font-weight-bold text-info">
-                  {{ formatDecimal(displayChartData.cards.dailyAverage) }}
+                  {{ formatDecimal(topCards.dailyAverage) }}
                 </div>
                 <div class="text-caption text-medium-emphasis mt-1">
                   Average per day
@@ -564,7 +532,7 @@ const toggleShowAll = () => {
                   <v-icon color="warning" size="32">mdi-domain</v-icon>
                 </div>
                 <div class="text-h3 font-weight-bold text-warning">
-                  {{ displayChartData.cards.uniqueProviders }}
+                  {{ topCards.uniqueProviders }}
                 </div>
                 <div class="text-caption text-medium-emphasis mt-1">
                   Different providers
@@ -579,12 +547,12 @@ const toggleShowAll = () => {
           <!-- Provider Distribution -->
           <v-col cols="12" md="6">
             <UiParentCard>
-              <div v-if="displayChartData.provider.series.length > 0">
+              <div v-if="providerChartData.series.length > 0">
                 <apexchart
                   type="donut"
                   height="350"
                   :options="providerChartOptions"
-                  :series="displayChartData.provider.series"
+                  :series="providerChartData.series"
                 />
               </div>
               <div v-else class="text-center py-8">
@@ -597,12 +565,12 @@ const toggleShowAll = () => {
           <!-- Top States -->
           <v-col cols="12" md="6">
             <UiParentCard>
-              <div v-if="displayChartData.states.data.length > 0">
+              <div v-if="topStatesChartData.data.length > 0">
                 <apexchart
                   type="bar"
                   height="350"
                   :options="topStatesChartOptions"
-                  :series="[{ name: 'Requests', data: displayChartData.states.data }]"
+                  :series="[{ name: 'Requests', data: topStatesChartData.data }]"
                 />
               </div>
               <div v-else class="text-center py-8">
@@ -618,12 +586,12 @@ const toggleShowAll = () => {
           <!-- Average Speed by State -->
           <v-col cols="12" md="6">
             <UiParentCard>
-              <div v-if="displayChartData.speed.data.length > 0">
+              <div v-if="speedByStateChartData.data.length > 0">
                 <apexchart
                   type="bar"
                   height="350"
                   :options="speedByStateChartOptions"
-                  :series="[{ name: 'Avg Speed (Mbps)', data: displayChartData.speed.data }]"
+                  :series="[{ name: 'Avg Speed (Mbps)', data: speedByStateChartData.data }]"
                 />
               </div>
               <div v-else class="text-center py-8">
@@ -636,12 +604,12 @@ const toggleShowAll = () => {
           <!-- Technology Distribution -->
           <v-col cols="12" md="6">
             <UiParentCard>
-              <div v-if="displayChartData.technology.series.length > 0">
+              <div v-if="technologyChartData.series.length > 0">
                 <apexchart
                   type="donut"
                   height="350"
                   :options="technologyChartOptions"
-                  :series="displayChartData.technology.series"
+                  :series="technologyChartData.series"
                 />
               </div>
               <div v-else class="text-center py-8">

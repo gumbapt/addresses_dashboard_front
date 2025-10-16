@@ -243,3 +243,56 @@ export interface ReportFilters {
   page?: number;
   per_page?: number;
 }
+
+// Aggregated Domain Stats types
+export interface AggregatedDomainStats {
+  domain: {
+    id: number;
+    name: string;
+  };
+  kpis: {
+    total_requests: number;
+    success_rate: number;
+    daily_average: number;
+    unique_providers: number;
+  };
+  provider_distribution: Array<{
+    provider_id: number;
+    name: string;
+    slug: string;
+    technology: string;
+    total_count: number;
+    percentage: number;
+    avg_success_rate: number;
+  }>;
+  top_states: Array<{
+    state_id: number;
+    code: string;
+    name: string;
+    total_requests: number;
+    avg_success_rate: number;
+  }>;
+  hourly_distribution: Array<{
+    hour: string;
+    count: number;
+    normalized: number;
+  }>;
+  speed_by_state: Array<{
+    state_id: number;
+    code: string;
+    name: string;
+    avg_speed: number;
+  }>;
+  technology_distribution: Array<{
+    technology: string;
+    total_count: number;
+    percentage: number;
+    unique_providers: number;
+  }>;
+  exclusion_by_provider: Array<any>;
+}
+
+export interface AggregatedDomainResponse {
+  success: boolean;
+  data: AggregatedDomainStats;
+}
