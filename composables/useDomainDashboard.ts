@@ -58,8 +58,8 @@ export const useDomainDashboard = () => {
   // Computed para os dados dos gráficos de donut (Provider Distribution)
   const providerChartData = computed(() => {
     // Dados agregados
-    if (aggregatedData.value?.provider_distribution) {
-      const topProviders = aggregatedData.value.provider_distribution.slice(0, 8);
+    if (aggregatedData.value?.providers) {
+      const topProviders = aggregatedData.value.providers.slice(0, 8);
       return {
         series: topProviders.map(p => p.total_count),
         labels: topProviders.map(p => p.name)
@@ -81,8 +81,8 @@ export const useDomainDashboard = () => {
   // Computed para os dados do gráfico de barras (Top States)
   const topStatesChartData = computed(() => {
     // Dados agregados
-    if (aggregatedData.value?.top_states) {
-      const topStates = aggregatedData.value.top_states.slice(0, 10);
+    if (aggregatedData.value?.geographic?.states) {
+      const topStates = aggregatedData.value.geographic.states.slice(0, 10);
       return {
         categories: topStates.map(s => s.name || s.code),
         data: topStates.map(s => s.total_requests)
@@ -107,8 +107,8 @@ export const useDomainDashboard = () => {
   // Computed para os dados do gráfico de barras (Average Speed by State)
   const speedByStateChartData = computed(() => {
     // Dados agregados
-    if (aggregatedData.value?.speed_by_state && aggregatedData.value.speed_by_state.length > 0) {
-      const statesWithSpeed = aggregatedData.value.speed_by_state
+    if (aggregatedData.value?.geographic?.states) {
+      const statesWithSpeed = aggregatedData.value.geographic.states
         .filter(s => s.avg_speed > 0)
         .sort((a, b) => b.avg_speed - a.avg_speed)
         .slice(0, 10);
@@ -134,11 +134,21 @@ export const useDomainDashboard = () => {
 
   // Computed para os dados do gráfico de donut (Technology Distribution)
   const technologyChartData = computed(() => {
-    // Dados agregados
-    if (aggregatedData.value?.technology_distribution) {
+    // Dados agregados - calcular a partir dos providers
+    if (aggregatedData.value?.providers) {
+      const techMap = new Map<string, number>();
+      
+      aggregatedData.value.providers.forEach(p => {
+        const current = techMap.get(p.technology) || 0;
+        techMap.set(p.technology, current + p.total_count);
+      });
+      
+      const sorted = Array.from(techMap.entries())
+        .sort((a, b) => b[1] - a[1]);
+      
       return {
-        series: aggregatedData.value.technology_distribution.map(t => t.total_count),
-        labels: aggregatedData.value.technology_distribution.map(t => t.technology)
+        series: sorted.map(([_, count]) => count),
+        labels: sorted.map(([tech]) => tech)
       };
     }
     
@@ -156,16 +166,17 @@ export const useDomainDashboard = () => {
   // Computed para os cards do topo
   const topCards = computed(() => {
     // Dados agregados
-    if (aggregatedData.value?.kpis) {
-      const kpis = aggregatedData.value.kpis;
+    if (aggregatedData.value?.summary) {
+      const summary = aggregatedData.value.summary;
+      const period = aggregatedData.value.period;
       
       return {
-        totalRequests: kpis.total_requests || 0,
-        successRate: kpis.success_rate || 0,
-        dailyAverage: kpis.daily_average || 0,
-        uniqueProviders: kpis.unique_providers || 0
+        totalRequests: summary.total_requests || 0,
+        successRate: summary.avg_success_rate || 0,
+        dailyAverage: period.days_covered > 0 ? summary.total_requests / period.days_covered : 0,
+        uniqueProviders: summary.total_unique_providers || 0
       };
-    }
+    } 
     
     // Dados de report individual
     if (reportData.value?.raw_data?.summary) {

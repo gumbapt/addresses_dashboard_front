@@ -250,46 +250,62 @@ export interface AggregatedDomainStats {
     id: number;
     name: string;
   };
-  kpis: {
-    total_requests: number;
-    success_rate: number;
-    daily_average: number;
-    unique_providers: number;
+  period: {
+    total_reports: number;
+    first_report: string;
+    last_report: string;
+    days_covered: number;
   };
-  provider_distribution: Array<{
+  summary: {
+    total_requests: number;
+    total_failed: number;
+    avg_success_rate: number;
+    avg_requests_per_hour: number;
+    total_unique_providers: number;
+    total_unique_states: number;
+    total_unique_zip_codes: number;
+  };
+  providers: Array<{
     provider_id: number;
     name: string;
     slug: string;
     technology: string;
     total_count: number;
-    percentage: number;
     avg_success_rate: number;
-  }>;
-  top_states: Array<{
-    state_id: number;
-    code: string;
-    name: string;
-    total_requests: number;
-    avg_success_rate: number;
-  }>;
-  hourly_distribution: Array<{
-    hour: string;
-    count: number;
-    normalized: number;
-  }>;
-  speed_by_state: Array<{
-    state_id: number;
-    code: string;
-    name: string;
     avg_speed: number;
+    report_count: number;
   }>;
-  technology_distribution: Array<{
-    technology: string;
-    total_count: number;
-    percentage: number;
-    unique_providers: number;
+  geographic: {
+    states: Array<{
+      state_id: number;
+      code: string;
+      name: string;
+      total_requests: number;
+      avg_success_rate: number;
+      avg_speed: number;
+      report_count: number;
+    }>;
+    cities: Array<{
+      city_id: number;
+      name: string;
+      total_requests: number;
+      report_count: number;
+    }>;
+    zip_codes: Array<{
+      zip_code_id: number;
+      code: string;
+      total_requests: number;
+      report_count: number;
+    }>;
+  };
+  trends: Array<{
+    date: string;
+    report_id: number;
+    total_requests: number;
+    success_rate: number;
+    failed_requests: number;
+    avg_requests_per_hour: number;
   }>;
-  exclusion_by_provider: Array<any>;
 }
 
 export interface AggregatedDomainResponse {
