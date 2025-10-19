@@ -37,6 +37,12 @@ const sidebarItem: menu[] = [
     to: "/dashboard",
   },
   {
+    title: "Global Dashboard",
+    icon: "chart-pie-outline",
+    to: "/global-dashboard",
+    permission: "report-read",
+  },
+  {
     title: "Dashboard Template",
     icon: "presentation-graph-line-duotone",
     to: "/dashboard-template",

@@ -536,6 +536,113 @@ Response:
 Status: 404
 ```
 
+## Global Reports
+
+### Global Domain Ranking
+```
+GET /api/admin/reports/global/domain-ranking?sort_by={sortBy}&date_from={date}&date_to={date}&min_reports={num}
+Authorization: Bearer {token}
+
+Query Parameters:
+- sort_by: score (default) | volume | success | speed
+- date_from: Filter from date (YYYY-MM-DD)
+- date_to: Filter to date (YYYY-MM-DD)
+- min_reports: Minimum number of reports required
+
+Response:
+{
+  "success": true,
+  "data": {
+    "ranking": [
+      {
+        "rank": 1,
+        "domain": {
+          "id": 1,
+          "name": "smarterhome.ai",
+          "slug": "smarterhome-ai"
+        },
+        "metrics": {
+          "total_requests": 3781,
+          "success_rate": 96.0,
+          "avg_speed": 1150.0,
+          "score": 2.56,
+          "unique_providers": 25,
+          "unique_states": 40
+        },
+        "coverage": {
+          "total_reports": 40,
+          "period_start": "2025-07-01",
+          "period_end": "2025-10-01",
+          "days_covered": 93
+        }
+      }
+    ],
+    "sort_by": "score",
+    "total_domains": 4
+  }
+}
+```
+
+### Domain Comparison
+```
+GET /api/admin/reports/global/comparison?domains={id1,id2,...}&metric={metric}&date_from={date}&date_to={date}
+Authorization: Bearer {token}
+
+Query Parameters:
+- domains: Comma-separated domain IDs (required, min: 2)
+- metric: Optional detailed metric (geographic, providers, technologies)
+- date_from: Filter from date (YYYY-MM-DD)
+- date_to: Filter to date (YYYY-MM-DD)
+
+Response:
+{
+  "success": true,
+  "data": {
+    "domains": [
+      {
+        "domain": {
+          "id": 1,
+          "name": "zip.50g.io",
+          "slug": "zip-50g-io"
+        },
+        "metrics": {
+          "total_requests": 1490,
+          "success_rate": 92.38,
+          "avg_speed": 1006.47,
+          "unique_providers": 8,
+          "unique_states": 43
+        }
+      },
+      {
+        "domain": {
+          "id": 2,
+          "name": "smarterhome.ai",
+          "slug": "smarterhome-ai"
+        },
+        "metrics": {
+          "total_requests": 3781,
+          "success_rate": 95.98,
+          "avg_speed": 1149.82,
+          "unique_providers": 25,
+          "unique_states": 40
+        },
+        "comparison": {
+          "requests_diff": 153.8,
+          "requests_diff_label": "+153.8%",
+          "success_diff": 3.6,
+          "success_diff_label": "+3.6%",
+          "speed_diff": 14.2,
+          "speed_diff_label": "+14.2%"
+        }
+      }
+    ],
+    "base_domain_id": 1
+  }
+}
+
+Note: First domain in the list is used as baseline. Other domains show percentage differences.
+```
+
 ## Permission Required by Endpoint
 
 | Endpoint | Permission Required |
@@ -557,6 +664,8 @@ Status: 404
 | GET /reports | `report-read` |
 | GET /reports/{id} | `report-read` |
 | GET /reports/recent | `report-read` |
+| GET /reports/global/domain-ranking | `report-read` |
+| GET /reports/global/comparison | `report-read` |
 
 ## Notes
 

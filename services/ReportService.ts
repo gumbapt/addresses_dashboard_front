@@ -70,4 +70,42 @@ export class ReportService {
       };
     }
   }
+
+  async getGlobalDomainRanking(sortBy?: string): Promise<ApiResponse<any>> {
+    try {
+      const response = await this.reportRepository.getGlobalDomainRanking(sortBy);
+      
+      return {
+        success: response.success,
+        data: response.data,
+        message: 'Global domain ranking loaded successfully'
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      return {
+        success: false,
+        error: errorMessage
+      };
+    }
+  }
+
+  async compareDomains(domainIds: number[], metric?: string, dateFrom?: string, dateTo?: string): Promise<ApiResponse<any>> {
+    try {
+      const response = await this.reportRepository.compareDomains(domainIds, metric, dateFrom, dateTo);
+      
+      return {
+        success: response.success,
+        data: response.data,
+        message: 'Domain comparison loaded successfully'
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      return {
+        success: false,
+        error: errorMessage
+      };
+    }
+  }
 }

@@ -11,6 +11,7 @@ export default defineNuxtRouteMiddleware((to) => {
   const routePermissions: Record<string, string[]> = {
     '/': [], // Dashboard não precisa de permissão específica
     '/dashboard': [], // Dashboard não precisa de permissão específica
+    '/global-dashboard': ['report-read'],
     '/users': ['user-read'],
     '/users/create': ['user-create'],
     '/users/edit': ['user-update'],

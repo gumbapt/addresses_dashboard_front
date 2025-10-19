@@ -312,3 +312,83 @@ export interface AggregatedDomainResponse {
   success: boolean;
   data: AggregatedDomainStats;
 }
+
+// Global Domain Ranking types
+export interface DomainRankingItem {
+  rank: number;
+  domain: {
+    id: number;
+    name: string;
+    slug: string;
+  };
+  metrics: {
+    total_requests: number;
+    success_rate: number;
+    avg_speed: number;
+    score: number;
+    unique_providers: number;
+    unique_states: number;
+  };
+  coverage: {
+    total_reports: number;
+    period_start: string;
+    period_end: string;
+    days_covered: number;
+  };
+}
+
+export interface GlobalDomainRankingData {
+  ranking: DomainRankingItem[];
+  sort_by: string;
+  total_domains: number;
+}
+
+export interface GlobalDomainRankingResponse {
+  success: boolean;
+  data: GlobalDomainRankingData;
+  message?: string;
+}
+
+// Domain Comparison types
+export interface DomainComparisonMetrics {
+  total_requests: number;
+  success_rate: number;
+  avg_speed: number;
+  unique_providers?: number;
+  unique_states?: number;
+}
+
+export interface DomainComparisonItem {
+  domain: {
+    id: number;
+    name: string;
+    slug: string;
+  };
+  metrics: DomainComparisonMetrics;
+  comparison?: {
+    requests_diff: number;
+    requests_diff_label: string;
+    success_diff: number;
+    success_diff_label: string;
+    speed_diff: number;
+    speed_diff_label: string;
+  };
+  geographic?: any;
+  providers?: any;
+  technologies?: any;
+}
+
+export interface DomainComparisonData {
+  domains: DomainComparisonItem[];
+  base_domain_id: number;
+  period?: {
+    date_from?: string;
+    date_to?: string;
+  };
+}
+
+export interface DomainComparisonResponse {
+  success: boolean;
+  data: DomainComparisonData;
+  message?: string;
+}

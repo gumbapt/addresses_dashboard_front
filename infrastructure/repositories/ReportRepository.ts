@@ -70,4 +70,46 @@ export class ReportRepository {
       throw new Error('Failed to fetch recent reports');
     }
   }
+
+  async getGlobalDomainRanking(sortBy?: string): Promise<any> {
+    try {
+      let url = '/reports/global/domain-ranking';
+      
+      if (sortBy) {
+        url += `?sort_by=${sortBy}`;
+      }
+      
+      const response = await this.apiClient.get<any>(url);
+      return response;
+    } catch (error) {
+      console.error('Get global domain ranking failed:', error);
+      throw new Error('Failed to fetch global domain ranking');
+    }
+  }
+
+  async compareDomains(domainIds: number[], metric?: string, dateFrom?: string, dateTo?: string): Promise<any> {
+    try {
+      const params = new URLSearchParams();
+      params.append('domains', domainIds.join(','));
+      
+      if (metric) {
+        params.append('metric', metric);
+      }
+      
+      if (dateFrom) {
+        params.append('date_from', dateFrom);
+      }
+      
+      if (dateTo) {
+        params.append('date_to', dateTo);
+      }
+      
+      const url = `/reports/global/comparison?${params.toString()}`;
+      const response = await this.apiClient.get<any>(url);
+      return response;
+    } catch (error) {
+      console.error('Compare domains failed:', error);
+      throw new Error('Failed to compare domains');
+    }
+  }
 }
