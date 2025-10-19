@@ -237,6 +237,205 @@ const getMedalIcon = (rank: number): string => {
         </v-col>
       </v-row>
 
+      <!-- Global Charts -->
+      <v-row class="mb-4">
+        <!-- Top Domains by Volume (Bar Chart) -->
+        <v-col cols="12" md="6">
+          <UiParentCard>
+            <apexchart
+              v-if="formattedRanking.length > 0"
+              type="bar"
+              height="300"
+              :options="{
+                chart: {
+                  type: 'bar',
+                  fontFamily: 'inherit',
+                  toolbar: { show: false }
+                },
+                title: {
+                  text: 'Top Domains by Volume',
+                  align: 'left',
+                  style: { fontSize: '16px', fontWeight: 600 }
+                },
+                plotOptions: {
+                  bar: {
+                    horizontal: true,
+                    borderRadius: 4,
+                    dataLabels: { position: 'top' }
+                  }
+                },
+                dataLabels: {
+                  enabled: true,
+                  formatter: function(val: number) {
+                    return formatNumber(val);
+                  },
+                  offsetX: 30
+                },
+                xaxis: {
+                  categories: formattedRanking.slice(0, 5).map(r => r.domain.name)
+                },
+                colors: ['#1976d2']
+              }"
+              :series="[{ 
+                name: 'Requests', 
+                data: formattedRanking.slice(0, 5).map(r => r.metrics.total_requests) 
+              }]"
+            />
+            <div v-else class="text-center py-8">
+              <v-icon size="64" color="grey">mdi-chart-bar</v-icon>
+              <p class="text-h6 mt-4 text-medium-emphasis">No data available</p>
+            </div>
+          </UiParentCard>
+        </v-col>
+
+        <!-- Success Rate Distribution (Donut Chart) -->
+        <v-col cols="12" md="6">
+          <UiParentCard>
+            <apexchart
+              v-if="formattedRanking.length > 0"
+              type="donut"
+              height="300"
+              :options="{
+                chart: {
+                  type: 'donut',
+                  fontFamily: 'inherit'
+                },
+                title: {
+                  text: 'Success Rate Distribution',
+                  align: 'left',
+                  style: { fontSize: '16px', fontWeight: 600 }
+                },
+                labels: ['Excellent (≥95%)', 'Good (90-95%)', 'Fair (80-90%)', 'Poor (<80%)'],
+                colors: ['#4caf50', '#8bc34a', '#ffc107', '#f44336'],
+                legend: { position: 'bottom' },
+                dataLabels: {
+                  enabled: true,
+                  formatter: function(val: number) {
+                    return val.toFixed(0) + '%';
+                  }
+                }
+              }"
+              :series="[
+                formattedRanking.filter(r => r.metrics.success_rate >= 95).length,
+                formattedRanking.filter(r => r.metrics.success_rate >= 90 && r.metrics.success_rate < 95).length,
+                formattedRanking.filter(r => r.metrics.success_rate >= 80 && r.metrics.success_rate < 90).length,
+                formattedRanking.filter(r => r.metrics.success_rate < 80).length
+              ]"
+            />
+            <div v-else class="text-center py-8">
+              <v-icon size="64" color="grey">mdi-chart-donut</v-icon>
+              <p class="text-h6 mt-4 text-medium-emphasis">No data available</p>
+            </div>
+          </UiParentCard>
+        </v-col>
+      </v-row>
+
+      <!-- Domain Coverage (Bar Chart) + Speed Comparison (Bar Chart) -->
+      <v-row class="mb-4">
+        <!-- Reports per Domain -->
+        <v-col cols="12" md="6">
+          <UiParentCard>
+            <apexchart
+              v-if="formattedRanking.length > 0"
+              type="bar"
+              height="300"
+              :options="{
+                chart: {
+                  type: 'bar',
+                  fontFamily: 'inherit',
+                  toolbar: { show: false }
+                },
+                title: {
+                  text: 'Reports per Domain',
+                  align: 'left',
+                  style: { fontSize: '16px', fontWeight: 600 }
+                },
+                plotOptions: {
+                  bar: {
+                    borderRadius: 4,
+                    columnWidth: '60%'
+                  }
+                },
+                dataLabels: { enabled: false },
+                xaxis: {
+                  categories: formattedRanking.map(r => r.domain.name),
+                  labels: {
+                    rotate: -45,
+                    style: { fontSize: '11px' }
+                  }
+                },
+                yaxis: {
+                  title: { text: 'Number of Reports' }
+                },
+                colors: ['#ff9800']
+              }"
+              :series="[{ 
+                name: 'Reports', 
+                data: formattedRanking.map(r => r.coverage.total_reports) 
+              }]"
+            />
+            <div v-else class="text-center py-8">
+              <v-icon size="64" color="grey">mdi-chart-bar</v-icon>
+              <p class="text-h6 mt-4 text-medium-emphasis">No data available</p>
+            </div>
+          </UiParentCard>
+        </v-col>
+
+        <!-- Average Speed Comparison -->
+        <v-col cols="12" md="6">
+          <UiParentCard>
+            <apexchart
+              v-if="formattedRanking.filter(r => r.metrics.avg_speed > 0).length > 0"
+              type="bar"
+              height="300"
+              :options="{
+                chart: {
+                  type: 'bar',
+                  fontFamily: 'inherit',
+                  toolbar: { show: false }
+                },
+                title: {
+                  text: 'Average Speed by Domain',
+                  align: 'left',
+                  style: { fontSize: '16px', fontWeight: 600 }
+                },
+                plotOptions: {
+                  bar: {
+                    borderRadius: 4,
+                    columnWidth: '60%'
+                  }
+                },
+                dataLabels: {
+                  enabled: true,
+                  formatter: function(val: number) {
+                    return val.toFixed(0) + ' Mbps';
+                  }
+                },
+                xaxis: {
+                  categories: formattedRanking.filter(r => r.metrics.avg_speed > 0).map(r => r.domain.name),
+                  labels: {
+                    rotate: -45,
+                    style: { fontSize: '11px' }
+                  }
+                },
+                yaxis: {
+                  title: { text: 'Speed (Mbps)' }
+                },
+                colors: ['#9c27b0']
+              }"
+              :series="[{ 
+                name: 'Avg Speed', 
+                data: formattedRanking.filter(r => r.metrics.avg_speed > 0).map(r => r.metrics.avg_speed) 
+              }]"
+            />
+            <div v-else class="text-center py-8">
+              <v-icon size="64" color="grey">mdi-speedometer</v-icon>
+              <p class="text-h6 mt-4 text-medium-emphasis">No speed data available</p>
+            </div>
+          </UiParentCard>
+        </v-col>
+      </v-row>
+
       <!-- Top 3 Podium -->
       <v-row class="mb-4" v-if="topThree.length >= 3">
         <v-col cols="12">
