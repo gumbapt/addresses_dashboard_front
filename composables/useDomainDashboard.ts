@@ -58,7 +58,7 @@ export const useDomainDashboard = () => {
   // Computed para os dados dos gráficos de donut (Provider Distribution)
   const providerChartData = computed(() => {
     // Dados agregados
-    if (aggregatedData.value?.providers) {
+    if (aggregatedData.value?.providers && Array.isArray(aggregatedData.value.providers)) {
       const topProviders = aggregatedData.value.providers.slice(0, 8);
       return {
         series: topProviders.map(p => p.total_count),
@@ -67,7 +67,7 @@ export const useDomainDashboard = () => {
     }
     
     // Dados de report individual
-    if (reportData.value?.raw_data?.providers?.top_providers) {
+    if (reportData.value?.raw_data?.providers?.top_providers && Array.isArray(reportData.value.raw_data.providers.top_providers)) {
       const topProviders = reportData.value.raw_data.providers.top_providers.slice(0, 8);
       return {
         series: topProviders.map((p: any) => p.total_count),
@@ -81,7 +81,7 @@ export const useDomainDashboard = () => {
   // Computed para os dados do gráfico de barras (Top States)
   const topStatesChartData = computed(() => {
     // Dados agregados
-    if (aggregatedData.value?.geographic?.states) {
+    if (aggregatedData.value?.geographic?.states && Array.isArray(aggregatedData.value.geographic.states)) {
       const topStates = aggregatedData.value.geographic.states.slice(0, 10);
       return {
         categories: topStates.map(s => s.name || s.code),
@@ -90,7 +90,7 @@ export const useDomainDashboard = () => {
     }
     
     // Dados de report individual
-    if (reportData.value?.raw_data?.geographic?.states) {
+    if (reportData.value?.raw_data?.geographic?.states && Array.isArray(reportData.value.raw_data.geographic.states)) {
       const topStates = [...reportData.value.raw_data.geographic.states]
         .sort((a: any, b: any) => b.request_count - a.request_count)
         .slice(0, 10);
@@ -120,7 +120,7 @@ export const useDomainDashboard = () => {
     }
     
     // Dados de report individual
-    if (reportData.value?.raw_data?.speed_metrics?.by_state) {
+    if (reportData.value?.raw_data?.speed_metrics?.by_state && Array.isArray(reportData.value.raw_data.speed_metrics.by_state)) {
       const topSpeeds = reportData.value.raw_data.speed_metrics.by_state.slice(0, 10);
       
       return {
@@ -135,7 +135,7 @@ export const useDomainDashboard = () => {
   // Computed para os dados do gráfico de donut (Technology Distribution)
   const technologyChartData = computed(() => {
     // Dados agregados - calcular a partir dos providers
-    if (aggregatedData.value?.providers) {
+    if (aggregatedData.value?.providers && Array.isArray(aggregatedData.value.providers)) {
       const techMap = new Map<string, number>();
       
       aggregatedData.value.providers.forEach(p => {
@@ -153,9 +153,9 @@ export const useDomainDashboard = () => {
     }
     
     // Dados de report individual
-    if (reportData.value?.raw_data?.technology_metrics?.distribution) {
+    if (reportData.value?.raw_data?.technology_metrics?.distribution && Array.isArray(reportData.value.raw_data.technology_metrics.distribution)) {
       return {
-        series: reportData.value.raw_data.technology_metrics.distribution.map((t: any) => t.count),
+        series: reportData.value.raw_data.technology_metrics.distribution.map((t: any) => t.count), 
         labels: reportData.value.raw_data.technology_metrics.distribution.map((t: any) => t.tech)
       };
     }
