@@ -218,4 +218,80 @@ export class AuthService implements IAuthService {
       };
     }
   }
+
+  async getRoleDomains(roleId: number): Promise<ApiResponse<any>> {
+    try {
+      const response = await this.authRepository.getRoleDomains(roleId);
+      
+      return {
+        success: response.success,
+        data: response.data,
+        message: 'Role domains loaded successfully'
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      return {
+        success: false,
+        error: errorMessage
+      };
+    }
+  }
+
+  async assignDomainsToRole(data: any): Promise<ApiResponse<any>> {
+    try {
+      const response = await this.authRepository.assignDomainsToRole(data);
+      
+      return {
+        success: response.success,
+        data: response.data,
+        message: response.message || 'Domains assigned successfully'
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      return {
+        success: false,
+        error: errorMessage
+      };
+    }
+  }
+
+  async revokeDomainsFromRole(data: any): Promise<ApiResponse<any>> {
+    try {
+      const response = await this.authRepository.revokeDomainsFromRole(data);
+      
+      return {
+        success: response.success,
+        data: response.data,
+        message: response.message || 'Domains revoked successfully'
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      return {
+        success: false,
+        error: errorMessage
+      };
+    }
+  }
+
+  async getMyDomains(): Promise<ApiResponse<any>> {
+    try {
+      const response = await this.authRepository.getMyDomains();
+      
+      return {
+        success: response.success,
+        data: response.data,
+        message: 'My domains loaded successfully'
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      return {
+        success: false,
+        error: errorMessage
+      };
+    }
+  }
 } 

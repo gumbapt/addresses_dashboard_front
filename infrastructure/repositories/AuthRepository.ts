@@ -127,4 +127,44 @@ export class AuthRepository implements IAuthRepository {
       throw new Error('Failed to update role permissions');
     }
   }
+
+  async getRoleDomains(roleId: number): Promise<any> {
+    try {
+      const response = await this.apiClient.get<any>(`/role/${roleId}/domains`);
+      return response;
+    } catch (error) {
+      console.error('Get role domains failed:', error);
+      throw new Error('Failed to get role domains');
+    }
+  }
+
+  async assignDomainsToRole(data: any): Promise<any> {
+    try {
+      const response = await this.apiClient.post<any>('/role/assign-domains', data);
+      return response;
+    } catch (error) {
+      console.error('Assign domains to role failed:', error);
+      throw new Error('Failed to assign domains to role');
+    }
+  }
+
+  async revokeDomainsFromRole(data: any): Promise<any> {
+    try {
+      const response = await this.apiClient.deleteWithBody<any>('/role/revoke-domains', data);
+      return response;
+    } catch (error) {
+      console.error('Revoke domains from role failed:', error);
+      throw new Error('Failed to revoke domains from role');
+    }
+  }
+
+  async getMyDomains(): Promise<any> {
+    try {
+      const response = await this.apiClient.get<any>('/my-domains');
+      return response;
+    } catch (error) {
+      console.error('Get my domains failed:', error);
+      throw new Error('Failed to get my domains');
+    }
+  }
 } 

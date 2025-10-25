@@ -26,6 +26,19 @@ const {
   formatResourceName
 } = useAvailablePermissions();
 
+// Usar composable de domain permissions
+const {
+  roleDomains,
+  loading: loadingDomains,
+  error: domainsError,
+  loadRoleDomains,
+  assignDomains,
+  revokeDomains
+} = useRoleDomainPermissions();
+
+// Usar composable de domains para listar
+const { domains: allDomains, loadDomains } = useDomains();
+
 // Verificar permissões
 const { hasPermission, canAccess } = usePermissions();
 
@@ -39,6 +52,7 @@ const showAddDialog = ref(false);
 const showEditDialog = ref(false);
 const showDeleteDialog = ref(false);
 const showPermissionsDialog = ref(false);
+const showDomainsDialog = ref(false);
 const selectedRole = ref<any>(null);
 
 // Estados do formulário de role
@@ -47,6 +61,13 @@ const roleForm = ref({
   description: '',
   is_active: true,
   selectedPermissions: [] as number[]
+});
+
+// Estados do formulário de domains
+const domainForm = ref({
+  selectedDomainIds: [] as number[],
+  canView: true,
+  canEdit: false
 });
 
 // Filtros disponíveis
@@ -120,6 +141,18 @@ const viewPermissions = (role: any) => {
   showPermissionsDialog.value = true;
 };
 
+const manageDomains = async (role: any) => {
+  selectedRole.value = role;
+  domainForm.value = {
+    selectedDomainIds: [],
+    canView: true,
+    canEdit: false
+  };
+  await loadRoleDomains(role.id);
+  await loadDomains();
+  showDomainsDialog.value = true;
+};
+
 const confirmDelete = async () => {
   if (selectedRole.value) {
     saving.value = true;
@@ -163,6 +196,60 @@ const toggleRoleStatus = (role: any) => {
 const clearFilters = () => {
   search.value = '';
   selectedStatus.value = 'all';
+};
+
+const assignDomainsToRole = async () => {
+  if (!selectedRole.value || domainForm.value.selectedDomainIds.length === 0) {
+    notification.warning('Please select at least one domain');
+    return;
+  }
+  
+  saving.value = true;
+  saveError.value = null;
+  
+  try {
+    const result = await assignDomains(
+      selectedRole.value.id,
+      domainForm.value.selectedDomainIds,
+      domainForm.value.canView,
+      domainForm.value.canEdit
+    );
+    
+    if (result.success) {
+      notification.success('Domains assigned successfully');
+      await loadRoleDomains(selectedRole.value.id);
+      domainForm.value.selectedDomainIds = [];
+    } else {
+      saveError.value = result.error || 'Failed to assign domains';
+      notification.error(result.error || 'Failed to assign domains');
+    }
+  } catch (error) {
+    saveError.value = error instanceof Error ? error.message : 'Unexpected error';
+    notification.error(error instanceof Error ? error.message : 'Unexpected error');
+  } finally {
+    saving.value = false;
+  }
+};
+
+const revokeDomainFromRole = async (domainId: number) => {
+  if (!selectedRole.value) return;
+  
+  saving.value = true;
+  
+  try {
+    const result = await revokeDomains(selectedRole.value.id, [domainId]);
+    
+    if (result.success) {
+      notification.success('Domain revoked successfully');
+      await loadRoleDomains(selectedRole.value.id);
+    } else {
+      notification.error(result.error || 'Failed to revoke domain');
+    }
+  } catch (error) {
+    notification.error(error instanceof Error ? error.message : 'Unexpected error');
+  } finally {
+    saving.value = false;
+  }
 };
 
 // Service instance
@@ -321,7 +408,8 @@ onMounted(() => {
             </v-col>
           </v-row>
         </UiChildCard>
-      </v-col> </v-row>
+      </v-col>
+    </v-row>
 
     <!-- Loading -->
     <v-row v-if="loading">
@@ -396,6 +484,17 @@ onMounted(() => {
                       title="View Permissions"
                     >
                       <v-icon>mdi-eye</v-icon>
+                    </v-btn>
+                    <v-btn
+                      v-if="hasPermission('role-assign')"
+                      icon
+                      size="small"
+                      variant="text"
+                      color="info"
+                      @click="manageDomains(role)"
+                      title="Manage Domains"
+                    >
+                      <v-icon>mdi-domain</v-icon>
                     </v-btn>
                     <v-btn
                       v-if="hasPermission('role-update')"
@@ -580,6 +679,116 @@ onMounted(() => {
           <v-spacer></v-spacer>
           <v-btn @click="showDeleteDialog = false" :disabled="saving">Cancel</v-btn>
           <v-btn color="error" @click="confirmDelete" :loading="saving" :disabled="saving">Delete</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Dialog: Manage Domains -->
+    <v-dialog v-model="showDomainsDialog" max-width="900px" scrollable>
+      <v-card>
+        <v-card-title>Manage Domains: {{ selectedRole?.name }}</v-card-title>
+        <v-card-text>
+          <v-row>
+            <!-- Current Assigned Domains -->
+            <v-col cols="12">
+              <div class="mb-4">
+                <h3 class="text-h6 mb-3">Currently Assigned Domains</h3>
+                <div v-if="loadingDomains" class="text-center py-4">
+                  <v-progress-circular indeterminate color="primary"></v-progress-circular>
+                </div>
+                <div v-else-if="roleDomains.length === 0">
+                  <v-alert type="info" variant="tonal">
+                    No domains assigned to this role yet
+                  </v-alert>
+                </div>
+                <v-list v-else density="compact">
+                  <v-list-item
+                    v-for="rd in roleDomains"
+                    :key="rd.domain_id"
+                  >
+                    <template v-slot:prepend>
+                      <v-icon color="primary">mdi-domain</v-icon>
+                    </template>
+                    <v-list-item-title>{{ rd.domain?.name || 'Domain #' + rd.domain_id }}</v-list-item-title>
+                    <v-list-item-subtitle>
+                      <v-chip size="x-small" variant="outlined" class="mr-1">
+                        {{ rd.can_view ? 'View' : 'No View' }}
+                      </v-chip>
+                      <v-chip size="x-small" variant="outlined">
+                        {{ rd.can_edit ? 'Edit' : 'No Edit' }}
+                      </v-chip>
+                    </v-list-item-subtitle>
+                    <template v-slot:append>
+                      <v-btn
+                        icon
+                        size="small"
+                        variant="text"
+                        color="error"
+                        @click="revokeDomainFromRole(rd.domain_id)"
+                        :loading="saving"
+                        title="Revoke"
+                      >
+                        <v-icon>mdi-close</v-icon>
+                      </v-btn>
+                    </template>
+                  </v-list-item>
+                </v-list>
+              </div>
+            </v-col>
+            
+            <v-col cols="12">
+              <v-divider></v-divider>
+            </v-col>
+            
+            <!-- Assign New Domains -->
+            <v-col cols="12">
+              <h3 class="text-h6 mb-3">Assign New Domains</h3>
+              <v-select
+                v-model="domainForm.selectedDomainIds"
+                :items="allDomains"
+                item-title="name"
+                item-value="id"
+                label="Select Domains"
+                variant="outlined"
+                multiple
+                chips
+                closable-chips
+              />
+            </v-col>
+            
+            <v-col cols="12" md="6">
+              <v-switch
+                v-model="domainForm.canView"
+                label="Can View"
+                color="primary"
+                hide-details
+              />
+            </v-col>
+            
+            <v-col cols="12" md="6">
+              <v-switch
+                v-model="domainForm.canEdit"
+                label="Can Edit"
+                color="primary"
+                hide-details
+              />
+            </v-col>
+          </v-row>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-alert v-if="saveError" type="error" variant="tonal" density="compact" class="mr-4">
+            {{ saveError }}
+          </v-alert>
+          <v-btn @click="showDomainsDialog = false" :disabled="saving">Close</v-btn>
+          <v-btn 
+            color="primary" 
+            @click="assignDomainsToRole" 
+            :loading="saving" 
+            :disabled="saving || domainForm.selectedDomainIds.length === 0"
+          >
+            Assign Domains
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>

@@ -392,3 +392,58 @@ export interface DomainComparisonResponse {
   data: DomainComparisonData;
   message?: string;
 }
+
+// Role Domain Permissions types
+export interface RoleDomainPermission {
+  role_id: number;
+  domain_id: number;
+  can_view: boolean;
+  can_edit: boolean;
+  assigned_at: string;
+  assigned_by: number;
+  domain?: Domain;
+}
+
+export interface RoleDomainsResponse {
+  success: boolean;
+  data: {
+    role: {
+      id: number;
+      name: string;
+      slug: string;
+    };
+    domains: RoleDomainPermission[];
+    total: number;
+  };
+}
+
+export interface AssignDomainsToRoleRequest {
+  role_id: number;
+  domain_ids: number[];
+  permissions: {
+    can_view: boolean;
+    can_edit: boolean;
+  };
+}
+
+export interface RevokeDomainsFromRoleRequest {
+  role_id: number;
+  domain_ids: number[];
+}
+
+export interface AssignDomainsResponse {
+  success: boolean;
+  message: string;
+  data: {
+    assigned_domains: number;
+  };
+}
+
+export interface MyDomainsResponse {
+  success: boolean;
+  data: {
+    access_type: 'all' | 'assigned';
+    domains?: Domain[];
+    total: number;
+  };
+}
