@@ -4,12 +4,12 @@ import UiChildCard from '@/components/shared/UiChildCard.vue';
 import PermissionSelector from '@/components/PermissionSelector.vue';
 import { AuthService } from '~/services/AuthService';
 
-// Definir middleware de autenticação e permissões
+// Define authentication and permissions middleware
 definePageMeta({
   middleware: ['auth', 'permissions']
 });
 
-// Usar o composable de roles
+// Use the roles composable
 const {
   formattedRoles,
   loading,
@@ -17,7 +17,7 @@ const {
   loadRoles
 } = useRoles();
 
-// Usar o composable de permissions disponíveis
+// Use the available permissions composable
 const {
   permissions: availablePermissions,
   loading: loadingPermissions,
@@ -26,7 +26,7 @@ const {
   formatResourceName
 } = useAvailablePermissions();
 
-// Usar composable de domain permissions
+// Use domain permissions composable
 const {
   roleDomains,
   loading: loadingDomains,
@@ -36,16 +36,16 @@ const {
   revokeDomains
 } = useRoleDomainPermissions();
 
-// Usar composable de domains para listar
+// Use domains composable to list
 const { domains: allDomains, loadDomains } = useDomains();
 
-// Verificar permissões
+// Check permissions
 const { hasPermission, canAccess } = usePermissions();
 
-// Notificações
+// Notifications
 const notification = useNotification();
 
-// Estados reativos para filtros
+// Reactive states for filters
 const search = ref('');
 const selectedStatus = ref('all');
 const showAddDialog = ref(false);
@@ -55,7 +55,7 @@ const showPermissionsDialog = ref(false);
 const showDomainsDialog = ref(false);
 const selectedRole = ref<any>(null);
 
-// Estados do formulário de role
+// Role form states
 const roleForm = ref({
   name: '',
   description: '',
@@ -63,21 +63,21 @@ const roleForm = ref({
   selectedPermissions: [] as number[]
 });
 
-// Estados do formulário de domains
+// Domains form states
 const domainForm = ref({
   selectedDomainIds: [] as number[],
   canView: true,
   canEdit: false
 });
 
-// Filtros disponíveis
+// Available filters
 const statusOptions = [
-  { value: 'all', label: 'Todos os Status' },
-  { value: 'Ativo', label: 'Ativo' },
-  { value: 'Inativo', label: 'Inativo' }
+  { value: 'all', label: 'All Status' },
+  { value: 'Ativo', label: 'Active' },
+  { value: 'Inativo', label: 'Inactive' }
 ];
 
-// Computed para filtrar roles
+// Computed to filter roles
 const filteredRoles = computed(() => {
   return formattedRoles.value.filter(role => {
     const matchesSearch = role.name.toLowerCase().includes(search.value.toLowerCase()) ||
@@ -88,10 +88,10 @@ const filteredRoles = computed(() => {
   });
 });
 
-// Funções de ação
+// Action functions
 const addRole = async () => {
   if (hasPermission('role-create')) {
-    // Resetar formulário
+    // Reset form
     roleForm.value = {
       name: '',
       description: '',
@@ -99,7 +99,7 @@ const addRole = async () => {
       selectedPermissions: []
     };
     
-    // Carregar permissões disponíveis se ainda não carregou
+    // Load available permissions if not yet loaded
     if (availablePermissions.value.length === 0) {
       await loadPermissions();
     }
@@ -112,7 +112,7 @@ const editRole = async (role: any) => {
   if (hasPermission('role-update')) {
     selectedRole.value = { ...role };
     
-    // Preencher formulário com dados do role
+    // Fill form with role data
     roleForm.value = {
       name: role.name,
       description: role.description,
@@ -120,7 +120,7 @@ const editRole = async (role: any) => {
       selectedPermissions: role.permissions ? role.permissions.map((p: any) => p.id) : []
     };
     
-    // Carregar permissões disponíveis se ainda não carregou
+    // Load available permissions if not yet loaded
     if (availablePermissions.value.length === 0) {
       await loadPermissions();
     }
@@ -165,7 +165,7 @@ const confirmDelete = async () => {
         showDeleteDialog.value = false;
         selectedRole.value = null;
         notification.success('Role deleted successfully');
-        // Recarregar roles após deletar
+        // Reload roles after delete
         await loadRoles();
       } else {
         saveError.value = result.error || 'Failed to delete role';
@@ -182,12 +182,12 @@ const confirmDelete = async () => {
 
 const toggleRoleStatus = (role: any) => {
   if (hasPermission('role-update')) {
-    // Aqui você implementaria a chamada para alterar status na API
-    if (role.status === 'Ativo') {
-      role.status = 'Inativo';
+    // Here you would implement the API call to change status
+    if (role.status === 'Active') {
+      role.status = 'Inactive';
       role.statusColor = 'error';
     } else {
-      role.status = 'Ativo';
+      role.status = 'Active';
       role.statusColor = 'success';
     }
   }
@@ -255,18 +255,18 @@ const revokeDomainFromRole = async (domainId: number) => {
 // Service instance
 const authService = new AuthService();
 
-// Estado para salvar
+// State for saving
 const saving = ref(false);
 const saveError = ref<string | null>(null);
 
-// Função para salvar role (criar ou editar)
+// Function to save role (create or edit)
 const saveRole = async () => {
   saving.value = true;
   saveError.value = null;
   
   try {
     if (selectedRole.value) {
-      // Editando role existente
+      // Editing existing role
       const updateData = {
         id: selectedRole.value.id,
         name: roleForm.value.name,
@@ -276,7 +276,7 @@ const saveRole = async () => {
       const result = await authService.updateRole(updateData);
       
       if (result.success) {
-        // Atualizar permissões separadamente
+        // Update permissions separately
         if (roleForm.value.selectedPermissions.length > 0 || selectedRole.value.permissions?.length > 0) {
           const permResult = await authService.updateRolePermissions({
             id: selectedRole.value.id,
@@ -290,7 +290,7 @@ const saveRole = async () => {
           }
         }
         
-        // Fechar diálogo e mostrar notificação de sucesso
+        // Close dialog and show success notification
         showEditDialog.value = false;
         notification.success('Role updated successfully');
       } else {
@@ -299,7 +299,7 @@ const saveRole = async () => {
         return;
       }
     } else {
-      // Criando novo role
+      // Creating new role
       const createData = {
         name: roleForm.value.name,
         description: roleForm.value.description,
@@ -309,7 +309,7 @@ const saveRole = async () => {
       const result = await authService.createRole(createData);
       
       if (result.success) {
-        // Fechar diálogo e mostrar notificação de sucesso
+        // Close dialog and show success notification
         showAddDialog.value = false;
         notification.success('Role created successfully');
       } else {
@@ -319,7 +319,7 @@ const saveRole = async () => {
       }
     }
     
-    // Recarregar roles
+    // Reload roles
     await loadRoles();
   } catch (error) {
     saveError.value = error instanceof Error ? error.message : 'Unexpected error';
@@ -329,7 +329,7 @@ const saveRole = async () => {
   }
 };
 
-// Carregar roles quando a página for montada
+    // Load roles when page is mounted
 onMounted(() => {
   loadRoles();
 });
@@ -344,7 +344,7 @@ onMounted(() => {
           <div>
             <h1 class="text-h4 font-weight-bold">Roles</h1>
             <p class="text-body-1 text-medium-emphasis">
-              Gerencie roles e permissões do sistema
+              Manage roles and system permissions
             </p>
           </div>
           <v-btn
@@ -354,13 +354,13 @@ onMounted(() => {
             @click="addRole"
             size="large"
           >
-            Criar Role
+            Create Role
           </v-btn>
         </div>
       </v-col>
     </v-row>
 
-    <!-- Filtros -->
+    <!-- Filters -->
     <v-row class="mb-6">
       <v-col cols="12">
         <UiChildCard title="Filters">
@@ -422,7 +422,7 @@ onMounted(() => {
       </v-col>
     </v-row>
 
-    <!-- Erro -->
+    <!-- Error -->
     <v-row v-else-if="error">
       <v-col cols="12">
         <UiChildCard>
@@ -433,7 +433,7 @@ onMounted(() => {
       </v-col>
     </v-row>
 
-    <!-- Tabela de Roles -->
+    <!-- Roles Table -->
     <v-row v-else>
       <v-col cols="12">
         <UiChildCard title="Roles List">
@@ -512,11 +512,11 @@ onMounted(() => {
                       icon
                       size="small"
                       variant="text"
-                      :color="role.status === 'Ativo' ? 'warning' : 'success'"
+                      :color="role.status === 'Active' ? 'warning' : 'success'"
                       @click="toggleRoleStatus(role)"
-                      :title="role.status === 'Ativo' ? 'Deactivate' : 'Activate'"
+                      :title="role.status === 'Active' ? 'Deactivate' : 'Activate'"
                     >
-                      <v-icon>{{ role.status === 'Ativo' ? 'mdi-toggle-switch-off' : 'mdi-toggle-switch' }}</v-icon>
+                      <v-icon>{{ role.status === 'Active' ? 'mdi-toggle-switch-off' : 'mdi-toggle-switch' }}</v-icon>
                     </v-btn>
                     <v-btn
                       v-if="hasPermission('role-delete')"
@@ -535,7 +535,7 @@ onMounted(() => {
             </tbody>
           </v-table>
 
-          <!-- Info sobre total de roles -->
+          <!-- Info about total roles -->
           <div class="d-flex justify-end mt-4">
             <div class="text-body-2 text-medium-emphasis">
               Total: {{ formattedRoles.length }} roles
@@ -545,7 +545,7 @@ onMounted(() => {
       </v-col>
     </v-row>
 
-    <!-- Diálogos -->
+    <!-- Dialogs -->
     <v-dialog v-model="showAddDialog" max-width="900px" scrollable>
       <v-card>
         <v-card-title>Create Role</v-card-title>
@@ -793,7 +793,7 @@ onMounted(() => {
       </v-card>
     </v-dialog>
 
-    <!-- Diálogo de Permissões -->
+    <!-- Permissions Dialog -->
     <v-dialog v-model="showPermissionsDialog" max-width="800px">
       <v-card>
         <v-card-title>Role Permissions: {{ selectedRole?.name }}</v-card-title>
