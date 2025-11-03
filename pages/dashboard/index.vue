@@ -13,7 +13,7 @@ import HeatmapChart from '@/components/charts/HeatmapChart.vue';
 import TreemapChart from '@/components/charts/TreemapChart.vue';
 import PolarAreaChart from '@/components/charts/PolarAreaChart.vue';
 
-// Definir middleware de autenticação
+// Define authentication middleware
 definePageMeta({
   middleware: 'auth'
 });

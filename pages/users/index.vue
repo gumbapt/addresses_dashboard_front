@@ -2,12 +2,12 @@
 import { ref, computed, onMounted } from 'vue';
 import UiChildCard from '@/components/shared/UiChildCard.vue';
 
-// Definir middleware de autenticação
+// Define authentication middleware
 definePageMeta({
   middleware: 'auth'
 });
 
-// Usar o composable de usuários
+// Use the users composable
 const {
   formattedUsers,
   pagination,
@@ -23,7 +23,7 @@ const {
   pageNumbers
 } = useUsers();
 
-// Estados reativos para filtros
+// Reactive states for filters
 const search = ref('');
 const selectedStatus = ref('all');
 const selectedRole = ref('all');
@@ -33,28 +33,28 @@ const showEditDialog = ref(false);
 const showDeleteDialog = ref(false);
 const selectedUser = ref<any>(null);
 
-// Estados do chat
+// Chat states
 const showChatDialog = ref(false);
 const selectedChatUser = ref<any>(null);
 
-// Filtros disponíveis
+// Available filters
 const statusOptions = [
-  { value: 'all', label: 'Todos os Status' },
-  { value: 'Ativo', label: 'Ativo' },
-  { value: 'Pendente', label: 'Pendente' }
+  { value: 'all', label: 'All Status' },
+  { value: 'Ativo', label: 'Active' },
+  { value: 'Pendente', label: 'Pending' }
 ];
 
 const roleOptions = [
-  { value: 'all', label: 'Todos os Roles' },
+  { value: 'all', label: 'All Roles' },
   { value: 'User', label: 'User' }
 ];
 
 const departmentOptions = [
-  { value: 'all', label: 'Todos os Departamentos' },
-  { value: 'TI', label: 'TI' }
+  { value: 'all', label: 'All Departments' },
+  { value: 'TI', label: 'IT' }
 ];
 
-// Computed para filtrar usuários
+// Computed to filter users
 const filteredUsers = computed(() => {
   return formattedUsers.value.filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(search.value.toLowerCase()) ||
@@ -67,7 +67,7 @@ const filteredUsers = computed(() => {
   });
 });
 
-// Funções de ação
+// Action functions
 const addUser = () => {
   showAddDialog.value = true;
 };
@@ -84,28 +84,28 @@ const deleteUser = (user: any) => {
 
 const confirmDelete = () => {
   if (selectedUser.value) {
-    // Aqui você implementaria a chamada para deletar na API
+    // Here you would implement the API call to delete
     showDeleteDialog.value = false;
     selectedUser.value = null;
-    // Recarregar usuários após deletar
+    // Reload users after delete
     loadUsers(pagination.value?.current_page || 1, pagination.value?.per_page || 15);
   }
 };
 
 const toggleUserStatus = (user: any) => {
-  // Aqui você implementaria a chamada para alterar status na API
-  if (user.status === 'Ativo') {
-    user.status = 'Pendente';
+  // Here you would implement the API call to change status
+  if (user.status === 'Active') {
+    user.status = 'Pending';
     user.statusColor = 'warning';
   } else {
-    user.status = 'Ativo';
+    user.status = 'Active';
     user.statusColor = 'success';
   }
 };
 
-// Função para iniciar chat com usuário
+// Function to start chat with user
 const startChat = async (user: any) => {
-  console.log('Iniciando chat com usuário:', user);
+  console.log('Starting chat with user:', user);
   selectedChatUser.value = user;
   showChatDialog.value = true;
 };
@@ -117,7 +117,7 @@ const clearFilters = () => {
   selectedDepartment.value = 'all';
 };
 
-// Carregar usuários quando a página for montada
+// Load users when page is mounted
 onMounted(() => {
   loadUsers();
 });
@@ -130,9 +130,9 @@ onMounted(() => {
       <v-col cols="12">
         <div class="d-flex align-center justify-space-between">
           <div>
-            <h1 class="text-h4 font-weight-bold">Usuários</h1>
+            <h1 class="text-h4 font-weight-bold">Users</h1>
             <p class="text-body-1 text-medium-emphasis">
-              Gerencie todos os usuários do sistema
+              Manage all system users
             </p>
           </div>
           <v-btn
@@ -141,21 +141,21 @@ onMounted(() => {
             @click="addUser"
             size="large"
           >
-            Adicionar Usuário
+            Add User
           </v-btn>
         </div>
       </v-col>
     </v-row>
 
-    <!-- Filtros -->
+    <!-- Filters -->
     <v-row class="mb-6">
       <v-col cols="12">
-        <UiChildCard title="Filtros">
+        <UiChildCard title="Filters">
           <v-row>
             <v-col cols="12" md="3">
               <v-text-field
                 v-model="search"
-                label="Buscar por nome ou email"
+                label="Search by name or email"
                 prepend-inner-icon="mdi-magnify"
                 variant="outlined"
                 density="compact"
@@ -190,7 +190,7 @@ onMounted(() => {
                 :items="departmentOptions"
                 item-title="label"
                 item-value="value"
-                label="Departamento"
+                label="Department"
                 variant="outlined"
                 density="compact"
               />
@@ -204,14 +204,14 @@ onMounted(() => {
                   @click="clearFilters"
                   prepend-icon="mdi-refresh"
                 >
-                  Limpar Filtros
+                  Clear Filters
                 </v-btn>
                 <v-chip
                   color="primary"
                   variant="tonal"
                   class="ml-auto"
                 >
-                  {{ filteredUsers.length }} usuários encontrados
+                  {{ filteredUsers.length }} users found
                 </v-chip>
               </div>
             </v-col>
@@ -231,7 +231,7 @@ onMounted(() => {
       </v-col>
     </v-row>
 
-    <!-- Erro -->
+    <!-- Error -->
     <v-row v-else-if="error">
       <v-col cols="12">
         <UiChildCard>
@@ -242,21 +242,21 @@ onMounted(() => {
       </v-col>
     </v-row>
 
-    <!-- Tabela de Usuários -->
+    <!-- Users Table -->
     <v-row v-else>
       <v-col cols="12">
-        <UiChildCard title="Lista de Usuários">
+        <UiChildCard title="Users List">
           <v-table fixed-header height="600px">
             <thead>
               <tr>
-                <th class="text-left">Usuário</th>
+                <th class="text-left">User</th>
                 <th class="text-left">Email</th>
                 <th class="text-left">Role</th>
-                <th class="text-left">Departamento</th>
+                <th class="text-left">Department</th>
                 <th class="text-left">Status</th>
-                <th class="text-left">Último Login</th>
-                <th class="text-left">Criado em</th>
-                <th class="text-center">Ações</th>
+                <th class="text-left">Last Login</th>
+                <th class="text-left">Created At</th>
+                <th class="text-center">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -302,7 +302,7 @@ onMounted(() => {
                       variant="text"
                       color="info"
                       @click="startChat(user)"
-                      title="Iniciar Chat"
+                      title="Start Chat"
                     >
                       <v-icon>mdi-chat</v-icon>
                     </v-btn>
@@ -312,7 +312,7 @@ onMounted(() => {
                       variant="text"
                       color="primary"
                       @click="editUser(user)"
-                      title="Editar"
+                      title="Edit"
                     >
                       <v-icon>mdi-pencil</v-icon>
                     </v-btn>
@@ -320,11 +320,11 @@ onMounted(() => {
                       icon
                       size="small"
                       variant="text"
-                      :color="user.status === 'Ativo' ? 'warning' : 'success'"
+                      :color="user.status === 'Active' ? 'warning' : 'success'"
                       @click="toggleUserStatus(user)"
-                      :title="user.status === 'Ativo' ? 'Desativar' : 'Ativar'"
+                      :title="user.status === 'Active' ? 'Deactivate' : 'Activate'"
                     >
-                      <v-icon>{{ user.status === 'Ativo' ? 'mdi-account-off' : 'mdi-account-check' }}</v-icon>
+                      <v-icon>{{ user.status === 'Active' ? 'mdi-account-off' : 'mdi-account-check' }}</v-icon>
                     </v-btn>
                     <v-btn
                       icon
@@ -332,7 +332,7 @@ onMounted(() => {
                       variant="text"
                       color="error"
                       @click="deleteUser(user)"
-                      title="Excluir"
+                      title="Delete"
                     >
                       <v-icon>mdi-delete</v-icon>
                     </v-btn>
@@ -342,14 +342,14 @@ onMounted(() => {
             </tbody>
           </v-table>
 
-          <!-- Paginação -->
+          <!-- Pagination -->
           <div v-if="pagination" class="d-flex align-center justify-space-between mt-4">
             <div class="text-body-2 text-medium-emphasis">
-              Mostrando {{ pagination.from }} a {{ pagination.to }} de {{ pagination.total }} usuários
+              Showing {{ pagination.from }} to {{ pagination.to }} of {{ pagination.total }} users
             </div>
             
             <div class="d-flex align-center gap-2">
-              <!-- Itens por página -->
+              <!-- Items per page -->
               <v-select
                 :model-value="pagination.per_page"
                 @update:model-value="changePerPage"
@@ -360,18 +360,18 @@ onMounted(() => {
                 style="width: 80px"
               />
               
-              <!-- Navegação -->
+              <!-- Navigation -->
               <v-btn
                 icon
                 variant="text"
                 :disabled="!canGoPrev"
                 @click="prevPage"
-                title="Página anterior"
+                title="Previous page"
               >
                 <v-icon>mdi-chevron-left</v-icon>
               </v-btn>
               
-              <!-- Números das páginas -->
+              <!-- Page numbers -->
               <div class="d-flex gap-1">
                 <v-btn
                   v-for="page in pageNumbers"
@@ -390,7 +390,7 @@ onMounted(() => {
                 variant="text"
                 :disabled="!canGoNext"
                 @click="nextPage"
-                title="Próxima página"
+                title="Next page"
               >
                 <v-icon>mdi-chevron-right</v-icon>
               </v-btn>
@@ -400,15 +400,15 @@ onMounted(() => {
       </v-col>
     </v-row>
 
-    <!-- Dialog de Adicionar Usuário -->
+    <!-- Add User Dialog -->
     <v-dialog v-model="showAddDialog" max-width="600px">
       <v-card>
         <v-card-title class="text-h5">
-          Adicionar Novo Usuário
+          Add New User
         </v-card-title>
         <v-card-text>
           <p class="text-body-2 text-medium-emphasis">
-            Formulário de adição de usuário será implementado aqui.
+            User addition form will be implemented here.
           </p>
         </v-card-text>
         <v-card-actions>
@@ -418,27 +418,27 @@ onMounted(() => {
             variant="text"
             @click="showAddDialog = false"
           >
-            Cancelar
+            Cancel
           </v-btn>
           <v-btn
             color="primary"
             @click="showAddDialog = false"
           >
-            Adicionar
+            Add
           </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
-    <!-- Dialog de Editar Usuário -->
+    <!-- Edit User Dialog -->
     <v-dialog v-model="showEditDialog" max-width="600px">
       <v-card>
         <v-card-title class="text-h5">
-          Editar Usuário
+          Edit User
         </v-card-title>
         <v-card-text>
           <p class="text-body-2 text-medium-emphasis">
-            Formulário de edição será implementado aqui.
+            Edit form will be implemented here.
           </p>
         </v-card-text>
         <v-card-actions>
@@ -448,30 +448,30 @@ onMounted(() => {
             variant="text"
             @click="showEditDialog = false"
           >
-            Cancelar
+            Cancel
           </v-btn>
           <v-btn
             color="primary"
             @click="showEditDialog = false"
           >
-            Salvar
+            Save
           </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
-    <!-- Dialog de Confirmação de Exclusão -->
+    <!-- Delete Confirmation Dialog -->
     <v-dialog v-model="showDeleteDialog" max-width="400px">
       <v-card>
         <v-card-title class="text-h5">
-          Confirmar Exclusão
+          Confirm Deletion
         </v-card-title>
         <v-card-text>
           <p class="text-body-2">
-            Tem certeza que deseja excluir o usuário <strong>{{ selectedUser?.name }}</strong>?
+            Are you sure you want to delete the user <strong>{{ selectedUser?.name }}</strong>?
           </p>
           <p class="text-caption text-medium-emphasis">
-            Esta ação não pode ser desfeita.
+            This action cannot be undone.
           </p>
         </v-card-text>
         <v-card-actions>
@@ -481,19 +481,19 @@ onMounted(() => {
             variant="text"
             @click="showDeleteDialog = false"
           >
-            Cancelar
+            Cancel
           </v-btn>
           <v-btn
             color="error"
             @click="confirmDelete"
           >
-            Excluir
+            Delete
           </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
-    <!-- Dialog de Chat -->
+    <!-- Chat Dialog -->
     <v-dialog v-model="showChatDialog" max-width="800px" persistent>
       <v-card class="chat-dialog-card">
         <v-card-title class="d-flex align-center justify-space-between pa-4">
@@ -502,7 +502,7 @@ onMounted(() => {
               <v-icon>mdi-account</v-icon>
             </v-avatar>
             <div>
-              <div class="text-h6">Chat com {{ selectedChatUser?.name }}</div>
+              <div class="text-h6">Chat with {{ selectedChatUser?.name }}</div>
               <div class="text-caption text-medium-emphasis">{{ selectedChatUser?.email }}</div>
             </div>
           </div>
@@ -510,7 +510,7 @@ onMounted(() => {
             icon
             variant="text"
             @click="showChatDialog = false"
-            title="Fechar"
+            title="Close"
           >
             <v-icon>mdi-close</v-icon>
           </v-btn>

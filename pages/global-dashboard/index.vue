@@ -3,23 +3,23 @@ import { ref, computed, onMounted } from 'vue';
 import UiParentCard from '@/components/shared/UiParentCard.vue';
 import UiChildCard from '@/components/shared/UiChildCard.vue';
 
-// Definir middleware
+// Define middleware
 definePageMeta({
   middleware: ['auth', 'permissions']
 });
 
-// Usar composables
+// Use composables
 const { rankingData, loading, error, currentSortBy, formattedRanking, topThree, globalStats, loadRanking } = useGlobalRanking();
 const { comparisonData, loading: comparisonLoading, error: comparisonError, loadComparison, formatNumber: formatNumberComp, getDiffColor, getDiffIcon } = useDomainComparison();
 const { domains: allDomains, loadDomains } = useDomains();
 
-// Estados
+// States
 const currentTab = ref('ranking');
 const selectedDomainIds = ref<number[]>([]);
 const dateFrom = ref<string>('');
 const dateTo = ref<string>('');
 
-// Opções de ordenação
+// Sort options
 const sortOptions = [
   { value: 'score', label: 'Overall Score' },
   { value: 'volume', label: 'Total Requests' },
@@ -27,7 +27,7 @@ const sortOptions = [
   { value: 'speed', label: 'Average Speed' }
 ];
 
-// Opções de domínios para comparação
+// Domain options for comparison
 const domainOptions = computed(() => {
   if (!allDomains.value || !Array.isArray(allDomains.value)) return [];
   return allDomains.value.map((d: any) => ({
@@ -36,23 +36,23 @@ const domainOptions = computed(() => {
   }));
 });
 
-// Carregar dados
+// Load data
 onMounted(() => {
   loadRanking('score');
   loadDomains();
 });
 
-// Função para mudar ordenação
+// Function to change sorting
 const changeSortBy = (sortBy: string) => {
   loadRanking(sortBy);
 };
 
-// Função para navegar para dashboard do domínio
+// Function to navigate to domain dashboard
 const viewDomainDashboard = (domainId: number) => {
   navigateTo(`/domains/${domainId}/dashboard`);
 };
 
-// Comparar domínios
+// Compare domains
 const compare = () => {
   if (selectedDomainIds.value.length < 2) {
     return;
@@ -61,14 +61,14 @@ const compare = () => {
   currentTab.value = 'comparison';
 };
 
-// Limpar seleção de comparação
+// Clear comparison selection
 const clearComparison = () => {
   selectedDomainIds.value = [];
   dateFrom.value = '';
   dateTo.value = '';
 };
 
-// Formatar números
+// Format numbers
 const formatNumber = (num: number): string => {
   if (num >= 1000000) {
     return (num / 1000000).toFixed(1) + 'M';
@@ -79,15 +79,15 @@ const formatNumber = (num: number): string => {
   return num.toString();
 };
 
-// Cor da medalha por posição
+// Medal color by position
 const getMedalColor = (rank: number): string => {
-  if (rank === 1) return 'warning'; // Ouro
-  if (rank === 2) return 'grey'; // Prata
+  if (rank === 1) return 'warning'; // Gold
+  if (rank === 2) return 'grey'; // Silver
   if (rank === 3) return 'orange'; // Bronze
   return 'default';
 };
 
-// Ícone da medalha
+// Medal icon
 const getMedalIcon = (rank: number): string => {
   if (rank <= 3) return 'mdi-medal';
   return 'mdi-numeric-' + rank + '-circle';

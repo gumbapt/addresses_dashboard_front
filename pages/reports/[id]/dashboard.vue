@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import UiParentCard from '@/components/shared/UiParentCard.vue';
 
-// Definir middleware
+// Define middleware
 definePageMeta({
   middleware: ['auth', 'permissions']
 });
@@ -11,10 +11,10 @@ definePageMeta({
 const route = useRoute();
 const reportId = computed(() => parseInt(route.params.id as string));
 
-// Usar composables
+// Use composables
 const { reportData, loading, error, loadDashboardStats, providerChartData, topStatesChartData, speedByStateChartData, technologyChartData, topCards } = useDomainDashboard();
 
-// Report e Domain info
+// Report and Domain info
 const currentDomain = computed(() => {
   return reportData.value?.domain;
 });
@@ -24,12 +24,12 @@ const reportDate = computed(() => {
   return new Date(reportData.value.report_date).toLocaleDateString('en-US');
 });
 
-// Carregar dados
+// Load data
 onMounted(async () => {
   await loadDashboardStats(reportId.value);
 });
 
-// Configurações dos gráficos
+// Chart configurations
 const providerChartOptions = computed(() => ({
   chart: {
     type: 'donut',
@@ -218,7 +218,7 @@ const technologyChartOptions = computed(() => ({
   }
 }));
 
-// Formatar números
+// Format numbers
 const formatNumber = (num: number): string => {
   if (num >= 1000000) {
     return (num / 1000000).toFixed(1) + 'M';
@@ -237,7 +237,7 @@ const formatDecimal = (num: number): string => {
   return num.toFixed(2);
 };
 
-// Voltar para lista de reports do domínio
+// Back to domain reports list
 const goBack = () => {
   if (reportData.value?.domain_id) {
     navigateTo(`/domains/${reportData.value.domain_id}/reports`);

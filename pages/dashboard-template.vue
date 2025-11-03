@@ -7,7 +7,7 @@ import UpcommingSchedule from "@/components/dashboards/UpcommingSchedule.vue";
 import TopPayingClients from "@/components/dashboards/TopPayingClients.vue";
 import ProductCards from "@/components/dashboards/ProductCards.vue";
 
-// Definir middleware de autenticação
+// Define authentication middleware
 definePageMeta({
   middleware: 'auth'
 });
@@ -21,7 +21,7 @@ const { user } = useAuth();
             <v-col cols="12">
                 <h1 class="text-h4 font-weight-bold">Dashboard</h1>
                 <p class="text-body-1 text-medium-emphasis">
-                    Bem-vindo, {{ user?.name || 'Usuário' }}!
+                    Welcome, {{ user?.name || 'User' }}!
                 </p>
             </v-col>
         </v-row>

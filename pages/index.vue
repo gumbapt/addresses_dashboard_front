@@ -7,14 +7,14 @@ import UpcommingSchedule from "@/components/dashboards/UpcommingSchedule.vue";
 import TopPayingClients from "@/components/dashboards/TopPayingClients.vue";
 import ProductCards from "@/components/dashboards/ProductCards.vue";
 
-// Definir middleware de autenticação
+// Define authentication middleware
 definePageMeta({
   middleware: 'auth'
 });
 
 const { isAuthenticated } = useAuth();
 
-// Redirecionar para dashboard se estiver autenticado, senão para login
+// Redirect to dashboard if authenticated, otherwise to login
 onMounted(() => {
   if (isAuthenticated.value) {
     navigateTo('/dashboard');

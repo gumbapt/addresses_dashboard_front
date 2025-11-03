@@ -3,12 +3,12 @@ import { ref, computed, onMounted, watch } from 'vue';
 import UiChildCard from '@/components/shared/UiChildCard.vue';
 import type { ReportFilters } from '~/types/api';
 
-// Definir middleware de autenticação e permissões
+// Define authentication and permissions middleware
 definePageMeta({
   middleware: ['auth', 'permissions']
 });
 
-// Usar o composable de reports
+// Use the reports composable
 const {
   formattedReports,
   meta,
@@ -25,16 +25,16 @@ const {
   pageNumbers
 } = useReports();
 
-// Usar composable de domains para filtro
+// Use domains composable for filter
 const { domains: allDomains, loadDomains } = useDomains();
 
-// Verificar permissões
+// Check permissions
 const { hasPermission } = usePermissions();
 
-// Notificações
+// Notifications
 const notification = useNotification();
 
-// Estados reativos para filtros
+// Reactive states for filters
 const filters = ref<ReportFilters>({
   domain_id: undefined,
   status: undefined,
@@ -44,12 +44,12 @@ const filters = ref<ReportFilters>({
   per_page: 15
 });
 
-// Estados para diálogos
+// States for dialogs
 const showDetailDialog = ref(false);
 const selectedReport = ref<any>(null);
 const detailLoading = ref(false);
 
-// Status disponíveis
+// Available statuses
 const statusOptions = [
   { value: undefined, label: 'All Status' },
   { value: 'pending', label: 'Pending' },
@@ -58,7 +58,7 @@ const statusOptions = [
   { value: 'failed', label: 'Failed' }
 ];
 
-// Computed para opções de domínio
+// Computed for domain options
 const domainOptions = computed(() => {
   const options = [{ value: undefined, label: 'All Domains' }];
   
@@ -74,13 +74,13 @@ const domainOptions = computed(() => {
   return options;
 });
 
-// Função para aplicar filtros
+// Function to apply filters
 const applyFilters = () => {
-  filters.value.page = 1; // Reset para primeira página ao aplicar filtros
+  filters.value.page = 1; // Reset to first page when applying filters
   loadReports(filters.value);
 };
 
-// Função para limpar filtros
+// Function to clear filters
 const clearFilters = () => {
   filters.value = {
     domain_id: undefined,
@@ -93,7 +93,7 @@ const clearFilters = () => {
   applyFilters();
 };
 
-// Função para ver detalhes do report
+// Function to view report details
 const viewReportDetails = async (report: any) => {
   showDetailDialog.value = true;
   detailLoading.value = true;
@@ -114,18 +114,18 @@ const viewReportDetails = async (report: any) => {
   }
 };
 
-// Função para formatar JSON
+// Function to format JSON
 const formatJSON = (data: any): string => {
   if (!data) return 'N/A';
   return JSON.stringify(data, null, 2);
 };
 
-// Função para exportar report (futura implementação)
+// Function to export report (future implementation)
 const exportReport = (report: any) => {
   notification.info('Export feature coming soon');
 };
 
-// Funções de navegação com filtros
+// Navigation functions with filters
 const handleNextPage = () => {
   nextPage(filters.value);
   filters.value.page = (filters.value.page || 1) + 1;
@@ -147,10 +147,10 @@ const handleChangePerPage = (perPage: number) => {
   filters.value.page = 1;
 };
 
-// Carregar dados quando a página for montada
+// Load data when page is mounted
 onMounted(() => {
-  loadDomains(); // Carregar domains para o filtro
-  loadReports(filters.value); // Carregar reports
+  loadDomains(); // Load domains for filter
+  loadReports(filters.value); // Load reports
 });
 </script>
 
@@ -170,7 +170,7 @@ onMounted(() => {
       </v-col>
     </v-row>
 
-    <!-- Filtros -->
+    <!-- Filters -->
     <v-row class="mb-6">
       <v-col cols="12">
         <UiChildCard title="Filters">
@@ -271,7 +271,7 @@ onMounted(() => {
       </v-col>
     </v-row>
 
-    <!-- Erro -->
+    <!-- Error -->
     <v-row v-else-if="error">
       <v-col cols="12">
         <UiChildCard>
@@ -282,7 +282,7 @@ onMounted(() => {
       </v-col>
     </v-row>
 
-    <!-- Tabela de Reports -->
+    <!-- Reports Table -->
     <v-row v-else>
       <v-col cols="12">
         <UiChildCard title="Reports List">
@@ -351,21 +351,21 @@ onMounted(() => {
             </tbody>
           </v-table>
 
-          <!-- Info sobre total (quando não há paginação ou só uma página) -->
+          <!-- Info about total (when there is no pagination or only one page) -->
           <div v-if="meta && meta.last_page === 1" class="d-flex justify-end mt-4">
             <div class="text-body-2 text-medium-emphasis">
               Total: {{ meta.total }} reports
             </div>
           </div>
 
-          <!-- Paginação (quando há múltiplas páginas) -->
+          <!-- Pagination (when there are multiple pages) -->
           <div v-if="meta && meta.last_page > 1" class="d-flex align-center justify-space-between mt-4">
             <div class="text-body-2 text-medium-emphasis">
               Showing {{ meta.from }} to {{ meta.to }} of {{ meta.total }} reports
             </div>
             
             <div class="d-flex align-center gap-2">
-              <!-- Itens por página -->
+              <!-- Items per page -->
               <v-select
                 :model-value="filters.per_page"
                 @update:model-value="handleChangePerPage"
@@ -387,7 +387,7 @@ onMounted(() => {
                 <v-icon>mdi-chevron-left</v-icon>
               </v-btn>
               
-              <!-- Números das páginas -->
+              <!-- Page numbers -->
               <div class="d-flex gap-1">
                 <v-btn
                   v-for="page in pageNumbers"

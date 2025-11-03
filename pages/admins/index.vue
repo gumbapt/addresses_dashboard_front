@@ -2,12 +2,12 @@
 import { ref, computed, onMounted } from 'vue';
 import UiChildCard from '@/components/shared/UiChildCard.vue';
 
-// Definir middleware de autenticação e permissões
+// Define authentication and permissions middleware
 definePageMeta({
   middleware: ['auth', 'permissions']
 });
 
-// Usar o composable de administradores
+// Use the administrators composable
 const {
   formattedAdmins,
   pagination,
@@ -26,16 +26,16 @@ const {
   deleteAdmin
 } = useAdmins();
 
-// Usar composable de roles para seleção
+// Use roles composable for selection
 const { formattedRoles, loadRoles } = useRoles();
 
-// Verificar permissões
+// Check permissions
 const { hasPermission, canAccess } = usePermissions();
 
-// Notificações
+// Notifications
 const notification = useNotification();
 
-// Estados reativos para filtros
+// Reactive states for filters
 const search = ref('');
 const selectedStatus = ref('all');
 const selectedRole = ref('all');
@@ -44,11 +44,11 @@ const showEditDialog = ref(false);
 const showDeleteDialog = ref(false);
 const selectedAdmin = ref<any>(null);
 
-// Estados do chat
+// Chat states
 const showChatDialog = ref(false);
 const selectedChatAdmin = ref<any>(null);
 
-// Estados do formulário de admin
+// Admin form states
 const adminForm = ref({
   name: '',
   email: '',
@@ -58,24 +58,24 @@ const adminForm = ref({
   role_id: null as number | null
 });
 
-// Estado para salvar
+// State for saving
 const saving = ref(false);
 const saveError = ref<string | null>(null);
 
-// Filtros disponíveis
+// Available filters
 const statusOptions = [
-  { value: 'all', label: 'Todos os Status' },
-  { value: 'Ativo', label: 'Ativo' },
-  { value: 'Inativo', label: 'Inativo' }
+  { value: 'all', label: 'All Status' },
+  { value: 'Ativo', label: 'Active' },
+  { value: 'Inativo', label: 'Inactive' }
 ];
 
 const roleOptions = [
-  { value: 'all', label: 'Todos os Roles' },
+  { value: 'all', label: 'All Roles' },
   { value: 'Super Admin', label: 'Super Admin' },
   { value: 'Admin', label: 'Admin' }
 ];
 
-// Computed para filtrar administradores
+// Computed to filter administrators
 const filteredAdmins = computed(() => {
   return formattedAdmins.value.filter(admin => {
     const matchesSearch = admin.name.toLowerCase().includes(search.value.toLowerCase()) ||
@@ -87,10 +87,10 @@ const filteredAdmins = computed(() => {
   });
 });
 
-// Funções de ação
+// Action functions
 const addAdmin = async () => {
   if (hasPermission('admin-create')) {
-    // Resetar formulário
+    // Reset form
     adminForm.value = {
       name: '',
       email: '',
@@ -100,7 +100,7 @@ const addAdmin = async () => {
       role_id: null
     };
     
-    // Carregar roles se ainda não carregou
+    // Load roles if not yet loaded
     if (formattedRoles.value.length === 0) {
       await loadRoles();
     }
@@ -113,17 +113,17 @@ const editAdmin = async (admin: any) => {
   if (hasPermission('admin-update')) {
     selectedAdmin.value = { ...admin };
     
-    // Preencher formulário com dados do admin
+    // Fill form with admin data
     adminForm.value = {
       name: admin.name,
       email: admin.email,
       password: '',
       password_confirmation: '',
       is_active: admin.is_active,
-      role_id: null // Você pode adicionar lógica para pegar o role_id se necessário
+      role_id: null // You can add logic to get the role_id if needed
     };
     
-    // Carregar roles se ainda não carregou
+    // Load roles if not yet loaded
     if (formattedRoles.value.length === 0) {
       await loadRoles();
     }
@@ -145,7 +145,7 @@ const saveAdmin = async () => {
   
   try {
     if (selectedAdmin.value) {
-      // Editando admin existente
+      // Editing existing admin
       const updateData = {
         id: selectedAdmin.value.id,
         name: adminForm.value.name,
@@ -164,7 +164,7 @@ const saveAdmin = async () => {
         notification.error(result.error || 'Failed to update admin');
       }
     } else {
-      // Criando novo admin
+      // Creating new admin
       const result = await createAdmin(adminForm.value);
       
       if (result.success) {
@@ -212,21 +212,21 @@ const confirmDelete = async () => {
 
 const toggleAdminStatus = (admin: any) => {
   if (hasPermission('admin-update')) {
-    // Aqui você implementaria a chamada para alterar status na API
-    if (admin.status === 'Ativo') {
-      admin.status = 'Inativo';
+    // Here you would implement the API call to change status
+    if (admin.status === 'Active') {
+      admin.status = 'Inactive';
       admin.statusColor = 'error';
     } else {
-      admin.status = 'Ativo';
+      admin.status = 'Active';
       admin.statusColor = 'success';
     }
   }
 };
 
-// Função para iniciar chat com administrador
+// Function to start chat with administrator
 const startChat = async (admin: any) => {
   if (canAccess('chat', 'read')) {
-    console.log('Iniciando chat com administrador:', admin);
+    console.log('Starting chat with administrator:', admin);
     selectedChatAdmin.value = admin;
     showChatDialog.value = true;
   }
@@ -238,7 +238,7 @@ const clearFilters = () => {
   selectedRole.value = 'all';
 };
 
-// Carregar administradores quando a página for montada
+// Load administrators when page is mounted
 onMounted(() => {
   loadAdmins();
 });
@@ -251,9 +251,9 @@ onMounted(() => {
       <v-col cols="12">
         <div class="d-flex align-center justify-space-between">
           <div>
-            <h1 class="text-h4 font-weight-bold">Administradores</h1>
+            <h1 class="text-h4 font-weight-bold">Administrators</h1>
             <p class="text-body-1 text-medium-emphasis">
-              Gerencie todos os administradores do sistema
+              Manage all system administrators
             </p>
           </div>
           <v-btn
@@ -263,21 +263,21 @@ onMounted(() => {
             @click="addAdmin"
             size="large"
           >
-            Adicionar Administrador
+            Add Administrator
           </v-btn>
         </div>
       </v-col>
     </v-row>
 
-    <!-- Filtros -->
+    <!-- Filters -->
     <v-row class="mb-6">
       <v-col cols="12">
-        <UiChildCard title="Filtros">
+        <UiChildCard title="Filters">
           <v-row>
             <v-col cols="12" md="4">
               <v-text-field
                 v-model="search"
-                label="Buscar por nome ou email"
+                label="Search by name or email"
                 prepend-inner-icon="mdi-magnify"
                 variant="outlined"
                 density="compact"
@@ -315,14 +315,14 @@ onMounted(() => {
                   @click="clearFilters"
                   prepend-icon="mdi-refresh"
                 >
-                  Limpar Filtros
+                  Clear Filters
                 </v-btn>
                 <v-chip
                   color="primary"
                   variant="tonal"
                   class="ml-auto"
                 >
-                  {{ filteredAdmins.length }} administradores encontrados
+                  {{ filteredAdmins.length }} administrators found
                 </v-chip>
               </div>
             </v-col>
@@ -342,7 +342,7 @@ onMounted(() => {
       </v-col>
     </v-row>
 
-    <!-- Erro -->
+    <!-- Error -->
     <v-row v-else-if="error">
       <v-col cols="12">
         <UiChildCard>
@@ -353,10 +353,10 @@ onMounted(() => {
       </v-col>
     </v-row>
 
-    <!-- Tabela de Administradores -->
+    <!-- Administrators Table -->
     <v-row v-else>
       <v-col cols="12">
-        <UiChildCard title="Lista de Administradores">
+        <UiChildCard title="Administrators List">
           <v-table fixed-header height="600px">
             <thead>
               <tr>
@@ -410,7 +410,7 @@ onMounted(() => {
                       variant="text"
                       color="info"
                       @click="startChat(admin)"
-                      title="Iniciar Chat"
+                      title="Start Chat"
                     >
                       <v-icon>mdi-chat</v-icon>
                     </v-btn>
@@ -421,7 +421,7 @@ onMounted(() => {
                       variant="text"
                       color="primary"
                       @click="editAdmin(admin)"
-                      title="Editar"
+                      title="Edit"
                     >
                       <v-icon>mdi-pencil</v-icon>
                     </v-btn>
@@ -430,11 +430,11 @@ onMounted(() => {
                       icon
                       size="small"
                       variant="text"
-                      :color="admin.status === 'Ativo' ? 'warning' : 'success'"
+                      :color="admin.status === 'Active' ? 'warning' : 'success'"
                       @click="toggleAdminStatus(admin)"
-                      :title="admin.status === 'Ativo' ? 'Desativar' : 'Ativar'"
+                      :title="admin.status === 'Active' ? 'Deactivate' : 'Activate'"
                     >
-                      <v-icon>{{ admin.status === 'Ativo' ? 'mdi-account-off' : 'mdi-account-check' }}</v-icon>
+                      <v-icon>{{ admin.status === 'Active' ? 'mdi-account-off' : 'mdi-account-check' }}</v-icon>
                     </v-btn>
                     <v-btn
                       v-if="hasPermission('admin-delete')"
@@ -443,7 +443,7 @@ onMounted(() => {
                       variant="text"
                       color="error"
                       @click="selectAdminToDelete(admin)"
-                      title="Excluir"
+                      title="Delete"
                     >
                       <v-icon>mdi-delete</v-icon>
                     </v-btn>
@@ -453,21 +453,21 @@ onMounted(() => {
             </tbody>
           </v-table>
 
-          <!-- Info sobre total (quando não há paginação) -->
+          <!-- Info about total (when there is no pagination) -->
           <div v-if="pagination && pagination.last_page === 1" class="d-flex justify-end mt-4">
             <div class="text-body-2 text-medium-emphasis">
               Total: {{ pagination.total }} administrators
             </div>
           </div>
 
-          <!-- Paginação (quando há múltiplas páginas) -->
+          <!-- Pagination (when there are multiple pages) -->
           <div v-if="pagination && pagination.last_page > 1" class="d-flex align-center justify-space-between mt-4">
             <div class="text-body-2 text-medium-emphasis">
               Showing {{ pagination.from }} to {{ pagination.to }} of {{ pagination.total }} administrators
             </div>
             
             <div class="d-flex align-center gap-2">
-              <!-- Itens por página -->
+              <!-- Items per page -->
               <v-select
                 :model-value="pagination.per_page"
                 @update:model-value="changePerPage"
@@ -478,7 +478,7 @@ onMounted(() => {
                 style="width: 80px"
               />
               
-              <!-- Navegação -->
+              <!-- Navigation -->
               <v-btn
                 icon
                 variant="text"
@@ -489,7 +489,7 @@ onMounted(() => {
                 <v-icon>mdi-chevron-left</v-icon>
               </v-btn>
               
-              <!-- Números das páginas -->
+              <!-- Page numbers -->
               <div class="d-flex gap-1">
                 <v-btn
                   v-for="page in pageNumbers"
@@ -518,7 +518,7 @@ onMounted(() => {
       </v-col>
     </v-row>
 
-    <!-- Diálogos -->
+    <!-- Dialogs -->
     <v-dialog v-model="showAddDialog" max-width="600px" scrollable>
       <v-card>
         <v-card-title>Create Administrator</v-card-title>
@@ -685,13 +685,13 @@ onMounted(() => {
     <!-- Chat Dialog -->
     <v-dialog v-model="showChatDialog" max-width="800px">
       <v-card>
-        <v-card-title>Chat com {{ selectedChatAdmin?.name }}</v-card-title>
+        <v-card-title>Chat with {{ selectedChatAdmin?.name }}</v-card-title>
         <v-card-text>
-          <p>Interface de chat com o administrador...</p>
+          <p>Chat interface with the administrator...</p>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn @click="showChatDialog = false">Fechar</v-btn>
+          <v-btn @click="showChatDialog = false">Close</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>

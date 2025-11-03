@@ -3,7 +3,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import UiParentCard from '@/components/shared/UiParentCard.vue';
 
-// Definir middleware
+// Define middleware
 definePageMeta({
   middleware: ['auth', 'permissions']
 });
@@ -11,7 +11,7 @@ definePageMeta({
 const route = useRoute();
 const domainId = computed(() => parseInt(route.params.id as string));
 
-// Usar composables
+// Use composables
 const { 
   reportData,
   aggregatedData,
@@ -28,7 +28,7 @@ const {
 const { formattedReports, loading: reportsLoading, loadReports } = useReports();
 const { domains: allDomains, loadDomains } = useDomains();
 
-// Estados
+// States
 const selectedReportId = ref<number | string>('all');
 const showAllReports = ref(false);
 
@@ -74,17 +74,17 @@ const displayInfo = computed(() => {
   return '';
 });
 
-// Carregar dados
+// Load data
 onMounted(async () => {
   await loadDomains();
   await loadReports({ domain_id: domainId.value, per_page: 100 });
   
-  // Auto-carregar dados agregados
+  // Auto-load aggregated data
   await loadAggregatedStats(domainId.value);
   selectedReportId.value = 'all';
 });
 
-// Watch para carregar dados quando mudar o report
+// Watch to load data when report changes
 watch(selectedReportId, async (newId) => {
   if (newId === 'all') {
     showAllReports.value = false;
@@ -95,7 +95,7 @@ watch(selectedReportId, async (newId) => {
   }
 });
 
-// Configurações dos gráficos
+// Chart configurations
 const providerChartOptions = computed(() => ({
   chart: {
     type: 'donut',
@@ -303,12 +303,12 @@ const formatDecimal = (num: number): string => {
   return num.toFixed(2);
 };
 
-// Voltar para lista de domains
+// Back to domains list
 const goBack = () => {
   navigateTo('/domains');
 };
 
-// Toggle para mostrar todos os reports
+// Toggle to show all reports
 const toggleShowAll = () => {
   showAllReports.value = !showAllReports.value;
 };
@@ -375,7 +375,7 @@ const toggleShowAll = () => {
       </v-col>
     </v-row>
 
-    <!-- View: Todos os Reports -->
+    <!-- View: All Reports -->
     <div v-if="showAllReports">
       <v-row>
         <v-col cols="12">
@@ -454,7 +454,7 @@ const toggleShowAll = () => {
         </v-col>
       </v-row>
 
-      <!-- Erro -->
+      <!-- Error -->
       <v-row v-else-if="error">
         <v-col cols="12">
           <UiParentCard>

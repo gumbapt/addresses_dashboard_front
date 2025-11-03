@@ -2,12 +2,12 @@
 import { ref, computed, onMounted } from 'vue';
 import UiChildCard from '@/components/shared/UiChildCard.vue';
 
-// Definir middleware de autenticação e permissões
+// Define authentication and permissions middleware
 definePageMeta({
   middleware: ['auth', 'permissions']
 });
 
-// Usar o composable de domains
+// Use the domains composable
 const {
   formattedDomains,
   pagination,
@@ -27,13 +27,13 @@ const {
   regenerateApiKey
 } = useDomains();
 
-// Verificar permissões
+// Check permissions
 const { hasPermission } = usePermissions();
 
-// Notificações
+// Notifications
 const notification = useNotification();
 
-// Estados reativos para filtros
+// Reactive states for filters
 const search = ref('');
 const selectedStatus = ref('all');
 const showAddDialog = ref(false);
@@ -42,7 +42,7 @@ const showDeleteDialog = ref(false);
 const showApiKeyDialog = ref(false);
 const selectedDomain = ref<any>(null);
 
-// Estados do formulário de domain
+// Domain form states
 const domainForm = ref({
   name: '',
   domain_url: '',
@@ -53,18 +53,18 @@ const domainForm = ref({
   is_active: true
 });
 
-// Estado para salvar
+// State for saving
 const saving = ref(false);
 const saveError = ref<string | null>(null);
 
-// Filtros disponíveis
+// Available filters
 const statusOptions = [
   { value: 'all', label: 'All Status' },
   { value: 'Ativo', label: 'Active' },
   { value: 'Inativo', label: 'Inactive' }
 ];
 
-// Timezones comuns
+// Common timezones
 const timezoneOptions = [
   'UTC',
   'America/New_York',
@@ -78,7 +78,7 @@ const timezoneOptions = [
   'Australia/Sydney'
 ];
 
-// Computed para filtrar domains
+// Computed to filter domains
 const filteredDomains = computed(() => {
   return formattedDomains.value.filter(domain => {
     const matchesSearch = domain.name.toLowerCase().includes(search.value.toLowerCase()) ||
@@ -90,7 +90,7 @@ const filteredDomains = computed(() => {
   });
 });
 
-// Funções de ação
+// Action functions
 const addDomain = () => {
   if (hasPermission('domain-create')) {
     domainForm.value = {
@@ -140,7 +140,7 @@ const saveDomain = async () => {
   
   try {
     if (selectedDomain.value) {
-      // Editando domain existente
+      // Editing existing domain
       const result = await updateDomain(selectedDomain.value.id, domainForm.value);
       
       if (result.success) {
@@ -152,7 +152,7 @@ const saveDomain = async () => {
         notification.error(result.error || 'Failed to update domain');
       }
     } else {
-      // Criando novo domain
+      // Creating new domain
       const result = await createDomain(domainForm.value);
       
       if (result.success) {
@@ -230,7 +230,7 @@ const clearFilters = () => {
   selectedStatus.value = 'all';
 };
 
-// Carregar domains quando a página for montada
+// Load domains when page is mounted
 onMounted(() => {
   loadDomains();
 });
@@ -261,7 +261,7 @@ onMounted(() => {
       </v-col>
     </v-row>
 
-    <!-- Filtros -->
+    <!-- Filters -->
     <v-row class="mb-6">
       <v-col cols="12">
         <UiChildCard title="Filters">
@@ -323,7 +323,7 @@ onMounted(() => {
       </v-col>
     </v-row>
 
-    <!-- Erro -->
+    <!-- Error -->
     <v-row v-else-if="error">
       <v-col cols="12">
         <UiChildCard>
@@ -334,7 +334,7 @@ onMounted(() => {
       </v-col>
     </v-row>
 
-    <!-- Tabela de Domains -->
+    <!-- Domains Table -->
     <v-row v-else>
       <v-col cols="12">
         <UiChildCard title="Domains List">
@@ -423,21 +423,21 @@ onMounted(() => {
             </tbody>
           </v-table>
 
-          <!-- Info sobre total (quando não há paginação) -->
+          <!-- Info about total (when there is no pagination) -->
           <div v-if="pagination && pagination.last_page === 1" class="d-flex justify-end mt-4">
             <div class="text-body-2 text-medium-emphasis">
               Total: {{ pagination.total }} domains
             </div>
           </div>
 
-          <!-- Paginação (quando há múltiplas páginas) -->
+          <!-- Pagination (when there are multiple pages) -->
           <div v-if="pagination && pagination.last_page > 1" class="d-flex align-center justify-space-between mt-4">
             <div class="text-body-2 text-medium-emphasis">
               Showing {{ pagination.from }} to {{ pagination.to }} of {{ pagination.total }} domains
             </div>
             
             <div class="d-flex align-center gap-2">
-              <!-- Itens por página -->
+              <!-- Items per page -->
               <v-select
                 :model-value="pagination.per_page"
                 @update:model-value="changePerPage"
@@ -459,7 +459,7 @@ onMounted(() => {
                 <v-icon>mdi-chevron-left</v-icon>
               </v-btn>
               
-              <!-- Números das páginas -->
+              <!-- Page numbers -->
               <div class="d-flex gap-1">
                 <v-btn
                   v-for="page in pageNumbers"
