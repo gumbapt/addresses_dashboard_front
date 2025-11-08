@@ -1,7 +1,7 @@
 export const API_CONFIG = {
   //BASE_URL: 'http://localhost:8006/api/admin',
   BASE_URL: 'https://dash3.50g.io/api/admin',
-  TIMEOUT: 10000, // 10 segundos
+  TIMEOUT: 10000, // 10 seconds
   ENDPOINTS: {
     LOGIN: '/login',
     LOGOUT: '/logout',
@@ -10,9 +10,9 @@ export const API_CONFIG = {
 } as const;
 
 export const getApiConfig = () => {
-  // Em produção, você pode usar variáveis de ambiente
+  // In production, you can use environment variables
   return {
-    baseURL: process.env.NUXT_API_BASE_URL || API_CONFIG.BASE_URL,
+    baseURL: process.env.NUXT_PUBLIC_API_BASE_URL || API_CONFIG.BASE_URL,
     timeout: API_CONFIG.TIMEOUT,
   };
 }; 

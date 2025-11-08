@@ -2,7 +2,7 @@ import type { ChatMessage, ChatUser, Chat, ChatEvent, TypingEvent } from '~/type
 import { ChatService } from '~/services/ChatService';
 
 export const useChat = () => {
-  // Estados reativos
+  // Reactive states
   const messages = ref<ChatMessage[]>([]);
   const channels = ref<Chat[]>([]);
   const currentChannel = ref<Chat | null>(null);
@@ -12,17 +12,21 @@ export const useChat = () => {
   const loading = ref(false);
   const error = ref<string | null>(null);
 
-  // Dados do usuário atual
+  // Current user data
   const { user } = useAuth();
   const currentUser = computed(() => user.value);
 
-  // Instância do Echo
+  // Echo instance
   const { $echo } = useNuxtApp();
 
-  // Instância do serviço
-  const chatService = new ChatService();
+  // Get runtime config for API URLs
+  const config = useRuntimeConfig();
+  const chatBaseUrl = config.public.chatApiUrl as string;
 
-  // Função para conectar ao chat
+  // Service instance
+  const chatService = new ChatService(chatBaseUrl);
+
+  // Function to connect to chat
   const connectToChat = () => {
     if (!$echo || !currentUser.value) return;
 
@@ -76,7 +80,7 @@ export const useChat = () => {
     }
   };
 
-  // Função para desconectar do chat
+  // Function to disconnect from chat
   const disconnectFromChat = () => {
     if ($echo) {
       $echo.leaveChannel('chat');
@@ -84,7 +88,7 @@ export const useChat = () => {
     }
   };
 
-  // Função para enviar mensagem
+  // Function to send message
   const sendMessage = async (message: string) => {
     if (!$echo || !currentUser.value || !message.trim()) return;
 
@@ -115,7 +119,7 @@ export const useChat = () => {
     }
   };
 
-  // Função para indicar que está digitando
+  // Function to indicate typing
   const startTyping = () => {
     if (!$echo || !currentUser.value) return;
 
@@ -127,7 +131,7 @@ export const useChat = () => {
     });
   };
 
-  // Função para parar de digitar
+  // Function to stop typing
   const stopTyping = () => {
     if (!$echo || !currentUser.value) return;
 
@@ -139,7 +143,7 @@ export const useChat = () => {
     });
   };
 
-  // Função para carregar mensagens
+  // Function to load messages
   const loadMessages = async (channelId: number) => {
     loading.value = true;
     error.value = null;
@@ -157,7 +161,7 @@ export const useChat = () => {
     }
   };
 
-  // Função para carregar canais
+  // Function to load channels
   const loadChannels = async () => {
     try {
       // Usar o serviço para carregar canais
@@ -175,7 +179,7 @@ export const useChat = () => {
     }
   };
 
-  // Função para trocar de canal
+  // Function to change channel
   const switchChannel = async (channel: Readonly<Chat>) => {
     currentChannel.value = { ...channel };
     await loadMessages(channel.id);
@@ -189,7 +193,7 @@ export const useChat = () => {
     }
   };
 
-  // Função para rolar para o final da conversa
+  // Function to scroll to the end of conversation
   const scrollToBottom = () => {
     nextTick(() => {
       const chatContainer = document.querySelector('.chat-messages');

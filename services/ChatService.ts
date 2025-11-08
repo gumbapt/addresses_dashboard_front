@@ -17,12 +17,12 @@ import type {
 export class ChatService {
   private chatRepository: ChatRepository;
 
-  constructor() {
-    this.chatRepository = new ChatRepository();
+  constructor(chatBaseUrl?: string) {
+    this.chatRepository = new ChatRepository(chatBaseUrl);
   }
 
   /**
-   * Criar chat privado
+   * Create private chat
    */
   async createPrivateChat(otherUserId: number, otherUserType: 'user' | 'admin'): Promise<Chat> {
     try {
@@ -42,7 +42,7 @@ export class ChatService {
   }
 
   /**
-   * Criar chat em grupo
+   * Create group chat
    */
   async createGroupChat(name: string, description: string, participants: Array<{ user_id: number; user_type: 'user' | 'admin' }>): Promise<Chat> {
     try {
@@ -61,7 +61,7 @@ export class ChatService {
   }
 
   /**
-   * Enviar mensagem para outro usuário (cria/usa chat privado)
+   * Send message to another user (creates/uses private chat)
    */
   async sendMessageToUser(content: string, otherUserId: number, otherUserType: 'user' | 'admin'): Promise<ChatMessageResponse> {
     try {
@@ -89,7 +89,7 @@ export class ChatService {
   }
 
   /**
-   * Enviar mensagem para um chat específico
+   * Send message to a specific chat
    */
   async sendMessageToChat(chatId: number, content: string): Promise<ChatMessage> {
     try {
@@ -235,19 +235,19 @@ export class ChatService {
         }
       }
     } catch (err) {
-      console.warn('Erro ao formatar data da mensagem:', err, message);
+      console.warn('Error formatting message date:', err, message);
     }
     
     return {
       ...message,
       time,
       isOwn: message.sender_id === currentUser?.id,
-      user_name: message.sender_type === 'admin' ? 'Admin' : 'Usuário'
+      user_name: message.sender_type === 'admin' ? 'Admin' : 'User'
     };
   }
 
   /**
-   * Validar chat
+   * Validate chat
    */
   validateChat(chat: Chat): boolean {
     return !!(
@@ -258,15 +258,15 @@ export class ChatService {
   }
 
   /**
-   * Obter nome do chat para exibição
+   * Get chat name for display
    */
   getChatDisplayName(chat: Chat): string {
     if (!chat.name) {
-      return chat.type === 'private' ? 'Chat Privado' : 'Chat em Grupo';
+      return chat.type === 'private' ? 'Private Chat' : 'Group Chat';
     }
     
     if (chat.type === 'private') {
-      // Para chats privados, remover o nome do usuário atual do nome
+      // For private chats, remove current user's name from the name
       const currentUser = useAuth().user.value;
       if (currentUser && chat.name.includes(currentUser.name)) {
         return chat.name.replace(`${currentUser.name} - `, '').replace(` - ${currentUser.name}`, '');

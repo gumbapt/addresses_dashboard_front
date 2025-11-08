@@ -20,14 +20,16 @@ export class ChatRepository {
   private apiClient: ApiClient;
   private chatApiClient: ApiClient;
 
-  constructor() {
+  constructor(chatBaseUrl?: string) {
     this.apiClient = new ApiClient();
-    // Cliente específico para chat sem /admin
-    this.chatApiClient = new ApiClient('http://localhost:8006/api');
+    // Specific client for chat without /admin
+    // Use provided URL or fallback to production URL
+    const baseUrl = chatBaseUrl || 'https://dash3.50g.io/api';
+    this.chatApiClient = new ApiClient(baseUrl);
   }
 
   /**
-   * Enviar mensagem para outro usuário (cria/usa chat privado)
+   * Send message to another user (creates/uses private chat)
    */
   async sendMessageToUser(content: string, receiverId: number, receiverType: 'user' | 'admin'): Promise<ChatMessageSendResponse> {
     try {
@@ -45,7 +47,7 @@ export class ChatRepository {
   }
 
   /**
-   * Buscar conversa entre dois usuários
+   * Fetch conversation between two users
    */
   async getConversation(otherUserId: number, otherUserType: 'user' | 'admin', page: number = 1, perPage: number = 50): Promise<any> {
     try {
@@ -73,7 +75,7 @@ export class ChatRepository {
   }
 
   /**
-   * Buscar mensagens de um chat específico
+   * Fetch messages from a specific chat
    */
   async getChatMessages(chatId: number, page: number = 1, perPage: number = 50): Promise<any> {
     try {
@@ -87,7 +89,7 @@ export class ChatRepository {
   }
 
   /**
-   * Enviar mensagem para um chat específico
+   * Send message to a specific chat
    */
   async sendMessageToChat(chatId: number, content: string): Promise<MessageSendResponse> {
     try {
@@ -103,7 +105,7 @@ export class ChatRepository {
   }
 
   /**
-   * Criar chat privado
+   * Create private chat
    */
   async createPrivateChat(otherUserId: number, otherUserType: 'user' | 'admin'): Promise<ChatCreateResponse> {
     try {
@@ -119,7 +121,7 @@ export class ChatRepository {
   }
 
   /**
-   * Criar chat em grupo
+   * Create group chat
    */
   async createGroupChat(name: string, description: string, participants: Array<{ user_id: number; user_type: 'user' | 'admin' }>): Promise<ChatCreateResponse> {
     try {
@@ -136,7 +138,7 @@ export class ChatRepository {
   }
 
   /**
-   * Buscar canais disponíveis
+   * Fetch available channels
    */
   async getChannels(): Promise<ChatChannel[]> {
     try {
@@ -148,7 +150,7 @@ export class ChatRepository {
   }
 
   /**
-   * Marcar mensagens como lidas
+   * Mark messages as read
    */
   async markAsRead(channelId: number): Promise<void> {
     try {

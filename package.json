@@ -5,10 +5,15 @@
   "private": true,
   "scripts": {
     "build": "nuxt build",
+    "build:prod": "NODE_ENV=production nuxt build",
+    "build:clean": "rm -rf .nuxt .output node_modules/.vite && npm run build:prod",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "deploy": "bash build-to-prod.sh",
+    "verify": "bash verify-build.sh",
+    "test:local": "bash test-local.sh"
   },
   "devDependencies": {
     "nuxt": "3.16.2"

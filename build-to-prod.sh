@@ -1,31 +1,38 @@
 #!/bin/bash
-# Salve como: build-production.sh no seu Mac
+# Portable Production Build Script
+# Works on any system without absolute paths
 
-cd /Users/pedronave/Documents/addresses_dashboard_front
+# Get script directory (works cross-platform)
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd "$SCRIPT_DIR"
 
-echo "🧹 Limpando arquivos antigos..."
+echo "🧹 Cleaning old files..."
 rm -rf .nuxt .output node_modules/.vite
 
-echo "🛑 Parando qualquer servidor dev..."
+echo "🛑 Stopping any dev server..."
 pkill -f "node.*nuxt.*dev" || true
 
-echo "🔨 Fazendo build de PRODUÇÃO..."
+echo "🔨 Building for PRODUCTION..."
 NODE_ENV=production npm run build
 
-echo "✅ Build concluído!"
+echo "✅ Build completed!"
 echo ""
-echo "🔍 Verificando se o build está correto..."
-if strings .output/server/chunks/nitro/nitro.mjs | grep -qi "/@vite\|Documents/addresses"; then
-    echo "❌ ERRO: Build ainda tem referências de desenvolvimento!"
-    echo "   Tente novamente ou delete node_modules e rode 'npm install'"
-    exit 1
+echo "🔍 Verifying build correctness..."
+if [ -f .output/server/chunks/nitro/nitro.mjs ]; then
+    if strings .output/server/chunks/nitro/nitro.mjs 2>/dev/null | grep -qi "/@vite\|Documents/addresses"; then
+        echo "❌ ERROR: Build still has development references!"
+        echo "   Try again or delete node_modules and run 'npm install'"
+        exit 1
+    else
+        echo "✅ Build looks correct!"
+    fi
 else
-    echo "✅ Build parece correto!"
+    echo "⚠️  Could not verify build (nitro.mjs not found)"
 fi
 
 echo ""
-echo "📁 Arquivos gerados:"
-ls -lh .output/public/_nuxt/ | head -5
+echo "📁 Generated files:"
+ls -lh .output/public/_nuxt/ 2>/dev/null | head -5 || echo "Build output directory not found"
 
 echo ""
-echo "📤 Próximo passo: git add, commit e push"
+echo "📤 Next step: git add, commit and push"
