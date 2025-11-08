@@ -1,6 +1,6 @@
 # Nuxt dev/build outputs
 # Note: .output is NOT ignored - we commit it for deployment
-.output
+# .output
 .data
 .nuxt
 .nitro

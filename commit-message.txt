@@ -1,0 +1,17 @@
+Production build with all fixes
+
+Changes:
+- Fixed useRuntimeConfig error in ChatRepository
+- Removed hardcoded localhost URLs
+- Added NUXT_PUBLIC_CHAT_API_URL to runtime config
+- Translated all Portuguese code to English
+- Fixed build path issues (no more Mac absolute paths)
+- Included complete .output directory with all JS files
+
+Build info:
+- 35 JavaScript files
+- 106 total files
+- 13MB size
+- All portable (no absolute paths)
+
+Ready for deployment on server without rebuild.
