@@ -148,9 +148,64 @@ export interface AdminsListResponse {
   pagination: Pagination;
 }
 
+// Domain Group types
+export interface DomainGroup {
+  id: number;
+  name: string;
+  slug: string;
+  description?: string;
+  is_active: boolean;
+  max_domains?: number | null;
+  settings?: Record<string, any>;
+  created_by?: number;
+  updated_by?: number;
+  created_at: string;
+  updated_at: string;
+  
+  // Relationships (when included)
+  domains?: Domain[];
+  domains_count?: number;
+  available_domains?: number | null;
+  has_reached_limit?: boolean;
+  creator?: {
+    id: number;
+    name: string;
+    email: string;
+  };
+}
+
+export interface DomainGroupsListResponse {
+  success: boolean;
+  data: DomainGroup[];
+  pagination: Pagination;
+}
+
+export interface DomainGroupResponse {
+  success: boolean;
+  message?: string;
+  data: DomainGroup;
+}
+
+export interface CreateDomainGroupRequest {
+  name: string;
+  description?: string;
+  is_active?: boolean;
+  max_domains?: number | null;
+  settings?: Record<string, any>;
+}
+
+export interface UpdateDomainGroupRequest {
+  name?: string;
+  description?: string;
+  is_active?: boolean;
+  max_domains?: number | null;
+  settings?: Record<string, any>;
+}
+
 // Domain types
 export interface Domain {
   id: number;
+  domain_group_id?: number | null; // NEW
   name: string;
   slug: string;
   domain_url: string;
@@ -164,6 +219,9 @@ export interface Domain {
   settings?: Record<string, any>;
   created_at: string;
   updated_at: string;
+  
+  // Relationships (when included)
+  domainGroup?: DomainGroup; // NEW
 }
 
 export interface DomainsListResponse {
@@ -179,6 +237,7 @@ export interface DomainResponse {
 }
 
 export interface CreateDomainRequest {
+  domain_group_id?: number | null; // NEW
   name: string;
   domain_url: string;
   site_id?: string;
@@ -189,6 +248,7 @@ export interface CreateDomainRequest {
 }
 
 export interface UpdateDomainRequest {
+  domain_group_id?: number | null; // NEW
   name?: string;
   domain_url?: string;
   site_id?: string;

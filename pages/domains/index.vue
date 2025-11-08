@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import UiChildCard from '@/components/shared/UiChildCard.vue';
+import DomainGroupSelector from '@/components/DomainGroupSelector.vue';
 
 // Define authentication and permissions middleware
 definePageMeta({
@@ -27,8 +28,15 @@ const {
   regenerateApiKey
 } = useDomains();
 
+// Use domain groups for selector
+const { formattedGroups } = useDomainGroups();
+
 // Check permissions
 const { hasPermission } = usePermissions();
+const { user } = useAuth();
+
+// Computed: is super admin
+const isSuperAdmin = computed(() => user.value?.is_super_admin === true);
 
 // Notifications
 const notification = useNotification();
@@ -44,6 +52,7 @@ const selectedDomain = ref<any>(null);
 
 // Domain form states
 const domainForm = ref({
+  domain_group_id: null as number | null, // NEW
   name: '',
   domain_url: '',
   site_id: '',
@@ -92,8 +101,9 @@ const filteredDomains = computed(() => {
 
 // Action functions
 const addDomain = () => {
-  if (hasPermission('domain-create')) {
+  if (hasPermission('domain-create') || isSuperAdmin.value) {
     domainForm.value = {
+      domain_group_id: null, // NEW
       name: '',
       domain_url: '',
       site_id: '',
@@ -107,9 +117,10 @@ const addDomain = () => {
 };
 
 const editDomain = (domain: any) => {
-  if (hasPermission('domain-update')) {
+  if (hasPermission('domain-update') || isSuperAdmin.value) {
     selectedDomain.value = { ...domain };
     domainForm.value = {
+      domain_group_id: domain.domain_group_id || null, // NEW
       name: domain.name,
       domain_url: domain.domain_url,
       site_id: domain.site_id,
@@ -342,6 +353,7 @@ onMounted(() => {
             <thead>
               <tr>
                 <th class="text-left">Name</th>
+                <th class="text-left">Group</th>
                 <th class="text-left">Domain URL</th>
                 <th class="text-left">Site ID</th>
                 <th class="text-left">Status</th>
@@ -355,6 +367,20 @@ onMounted(() => {
                 <td>
                   <div class="font-weight-medium">{{ domain.name }}</div>
                   <div class="text-caption text-medium-emphasis">{{ domain.slug }}</div>
+                </td>
+                <td>
+                  <v-chip
+                    v-if="domain.domainGroup"
+                    color="primary"
+                    variant="tonal"
+                    size="small"
+                    prepend-icon="mdi-folder"
+                  >
+                    {{ domain.domainGroup.name }}
+                  </v-chip>
+                  <span v-else class="text-medium-emphasis text-caption">
+                    No group
+                  </span>
                 </td>
                 <td>
                   <a :href="`https://${domain.domain_url}`" target="_blank" class="text-primary">
@@ -496,6 +522,15 @@ onMounted(() => {
           <v-form>
             <v-row>
               <v-col cols="12">
+                <DomainGroupSelector
+                  v-model="domainForm.domain_group_id"
+                  label="Domain Group (Optional)"
+                  hint="Organize domains into groups"
+                  :error="saveError && saveError.includes('limit') ? saveError : ''"
+                />
+              </v-col>
+              
+              <v-col cols="12">
                 <v-text-field
                   v-model="domainForm.name"
                   label="Name"
@@ -582,6 +617,15 @@ onMounted(() => {
         <v-card-text>
           <v-form>
             <v-row>
+              <v-col cols="12">
+                <DomainGroupSelector
+                  v-model="domainForm.domain_group_id"
+                  label="Domain Group (Optional)"
+                  hint="Change group assignment"
+                  :error="saveError && saveError.includes('limit') ? saveError : ''"
+                />
+              </v-col>
+              
               <v-col cols="12">
                 <v-text-field
                   v-model="domainForm.name"
