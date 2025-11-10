@@ -24,6 +24,7 @@ export class DomainGroupRepository {
     per_page?: number;
     search?: string;
     is_active?: boolean;
+    with_count?: boolean;
   }): Promise<DomainGroupsListResponse> {
     try {
       const queryParams = new URLSearchParams();
@@ -33,8 +34,14 @@ export class DomainGroupRepository {
       if (params?.search) queryParams.append('search', params.search);
       if (params?.is_active !== undefined) queryParams.append('is_active', params.is_active.toString());
       
+      // Always request domain count for display in the table
+      queryParams.append('with_count', 'true');
+      
       const url = `/domain-groups${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-      return await this.apiClient.get<DomainGroupsListResponse>(url);
+      console.log('🔍 DomainGroupRepository - list URL:', url);
+      const response = await this.apiClient.get<DomainGroupsListResponse>(url);
+      console.log('🔍 DomainGroupRepository - list response:', response);
+      return response;
     } catch (error) {
       console.error('DomainGroupRepository - list error:', error);
       throw error;
@@ -92,11 +99,43 @@ export class DomainGroupRepository {
   /**
    * Get domains of a specific group
    */
-  async getGroupDomains(id: number): Promise<ApiResponse<Domain[]>> {
+  async getGroupDomains(id: number): Promise<any> {
     try {
-      return await this.apiClient.get<ApiResponse<Domain[]>>(`/domain-groups/${id}/domains`);
+      console.log('🔍 DomainGroupRepository - getGroupDomains called with id:', id);
+      const response = await this.apiClient.get<any>(`/domain-groups/${id}/domains`);
+      console.log('🔍 DomainGroupRepository - getGroupDomains raw response:', response);
+      return response;
     } catch (error) {
       console.error('DomainGroupRepository - getGroupDomains error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Add multiple domains to a group (Batch operation)
+   */
+  async addDomainsToGroup(id: number, domainIds: number[]): Promise<ApiResponse<any>> {
+    try {
+      return await this.apiClient.post<ApiResponse<any>>(`/domain-groups/${id}/domains`, {
+        domain_ids: domainIds
+      });
+    } catch (error) {
+      console.error('DomainGroupRepository - addDomainsToGroup error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Remove multiple domains from a group (Batch operation)
+   */
+  async removeDomainsFromGroup(id: number, domainIds: number[]): Promise<ApiResponse<any>> {
+    try {
+      return await this.apiClient.deleteWithBody<ApiResponse<any>>(
+        `/domain-groups/${id}/domains`, 
+        { domain_ids: domainIds }
+      );
+    } catch (error) {
+      console.error('DomainGroupRepository - removeDomainsFromGroup error:', error);
       throw error;
     }
   }

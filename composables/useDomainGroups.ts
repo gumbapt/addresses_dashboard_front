@@ -168,6 +168,50 @@ export const useDomainGroups = () => {
     }
   };
 
+  /**
+   * Add multiple domains to a group (Batch operation)
+   */
+  const addDomainsToGroup = async (groupId: number, domainIds: number[]): Promise<ApiResponse<any>> => {
+    try {
+      const result = await domainGroupService.addDomainsToGroup(groupId, domainIds);
+      
+      if (result.success) {
+        // Reload groups after adding domains
+        await loadDomainGroups();
+      }
+      
+      return result;
+    } catch (err) {
+      console.error('Add domains to group error:', err);
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : 'Failed to add domains to group'
+      };
+    }
+  };
+
+  /**
+   * Remove multiple domains from a group (Batch operation)
+   */
+  const removeDomainsFromGroup = async (groupId: number, domainIds: number[]): Promise<ApiResponse<any>> => {
+    try {
+      const result = await domainGroupService.removeDomainsFromGroup(groupId, domainIds);
+      
+      if (result.success) {
+        // Reload groups after removing domains
+        await loadDomainGroups();
+      }
+      
+      return result;
+    } catch (err) {
+      console.error('Remove domains from group error:', err);
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : 'Failed to remove domains from group'
+      };
+    }
+  };
+
   // Pagination helpers
   const nextPage = (params?: any) => {
     if (pagination.value && pagination.value.current_page < pagination.value.last_page) {
@@ -240,6 +284,8 @@ export const useDomainGroups = () => {
     updateDomainGroup,
     deleteDomainGroup,
     getGroupDomains,
+    addDomainsToGroup,
+    removeDomainsFromGroup,
 
     // Pagination
     nextPage,

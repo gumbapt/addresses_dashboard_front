@@ -24,7 +24,16 @@ export class DomainGroupService {
     is_active?: boolean;
   }): Promise<ApiResponse<{ data: DomainGroup[]; pagination: any }>> {
     try {
+      console.log('🔍 DomainGroupService - getDomainGroups called with filters:', filters);
       const response = await this.domainGroupRepository.list(filters);
+      console.log('🔍 DomainGroupService - getDomainGroups response:', response);
+      
+      // Log domain counts for debugging
+      if (response.data) {
+        response.data.forEach((group: DomainGroup) => {
+          console.log(`🔍 Group "${group.name}" has domains_count:`, group.domains_count);
+        });
+      }
       
       return {
         success: response.success,
@@ -211,24 +220,110 @@ export class DomainGroupService {
    */
   async getGroupDomains(id: number): Promise<ApiResponse<Domain[]>> {
     try {
+      console.log('🔍 DomainGroupService - getGroupDomains called with id:', id);
       const response = await this.domainGroupRepository.getGroupDomains(id);
+      console.log('🔍 DomainGroupService - getGroupDomains response:', response);
       
-      if (response.success && response.data) {
+      // Handle response format: { success: true, data: { group_name, domains: [...], total, max_domains, available } }
+      if (response.success) {
+        const domains = response.data?.domains || [];
+        console.log('🔍 DomainGroupService - extracted domains:', domains);
+        
         return {
           success: true,
-          data: response.data
+          data: domains
         };
       }
       
       return {
         success: false,
-        error: 'Failed to fetch group domains'
+        error: response.message || 'Failed to fetch group domains'
       };
     } catch (error) {
       console.error('DomainGroupService - getGroupDomains error:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to fetch group domains'
+      };
+    }
+  }
+
+  /**
+   * Add multiple domains to a group (Batch operation)
+   * Returns info about moved domains if any were moved from other groups
+   */
+  async addDomainsToGroup(groupId: number, domainIds: number[]): Promise<ApiResponse<any>> {
+    try {
+      if (!domainIds || domainIds.length === 0) {
+        return {
+          success: false,
+          error: 'Please select at least one domain'
+        };
+      }
+
+      const response = await this.domainGroupRepository.addDomainsToGroup(groupId, domainIds);
+      
+      if (response.success) {
+        return {
+          success: true,
+          data: response.data,
+          message: response.message || 'Domains added successfully'
+        };
+      }
+      
+      return {
+        success: false,
+        error: response.message || 'Failed to add domains to group'
+      };
+    } catch (error) {
+      console.error('DomainGroupService - addDomainsToGroup error:', error);
+      
+      if ((error as any)?.response?.status === 400) {
+        const errorData = (error as any)?.response?.data;
+        return {
+          success: false,
+          error: errorData?.message || 'Group limit exceeded or validation error'
+        };
+      }
+      
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to add domains to group'
+      };
+    }
+  }
+
+  /**
+   * Remove multiple domains from a group (Batch operation)
+   */
+  async removeDomainsFromGroup(groupId: number, domainIds: number[]): Promise<ApiResponse<any>> {
+    try {
+      if (!domainIds || domainIds.length === 0) {
+        return {
+          success: false,
+          error: 'Please select at least one domain'
+        };
+      }
+
+      const response = await this.domainGroupRepository.removeDomainsFromGroup(groupId, domainIds);
+      
+      if (response.success) {
+        return {
+          success: true,
+          data: response.data,
+          message: response.message || 'Domains removed successfully'
+        };
+      }
+      
+      return {
+        success: false,
+        error: response.message || 'Failed to remove domains from group'
+      };
+    } catch (error) {
+      console.error('DomainGroupService - removeDomainsFromGroup error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to remove domains from group'
       };
     }
   }

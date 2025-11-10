@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import UiChildCard from '@/components/shared/UiChildCard.vue';
+import BatchDomainSelector from '@/components/BatchDomainSelector.vue';
+import { useConfirmDialog } from '~/composables/useConfirmDialog';
 import type { DomainGroup, CreateDomainGroupRequest, UpdateDomainGroupRequest } from '~/types/api';
 
 // Define authentication and permissions middleware
@@ -18,12 +20,15 @@ const {
   createDomainGroup,
   updateDomainGroup,
   deleteDomainGroup,
-  getGroupDomains
+  getGroupDomains,
+  addDomainsToGroup,
+  removeDomainsFromGroup
 } = useDomainGroups();
 
 // Check permissions
 const { hasPermission } = usePermissions();
 const { user } = useAuth();
+const confirmDialog = useConfirmDialog();
 
 // Computed: is super admin
 const isSuperAdmin = computed(() => user.value?.is_super_admin === true);
@@ -38,6 +43,7 @@ const showAddDialog = ref(false);
 const showEditDialog = ref(false);
 const showDeleteDialog = ref(false);
 const showDomainsDialog = ref(false);
+const showBatchAddDialog = ref(false); // NEW: For batch adding domains
 const selectedGroup = ref<any>(null);
 
 // Form states
@@ -82,6 +88,9 @@ const addGroup = () => {
     return;
   }
   
+  // Clear selected group (important for create vs edit logic)
+  selectedGroup.value = null;
+  
   // Reset form
   groupForm.value = {
     name: '',
@@ -114,31 +123,71 @@ const editGroup = (group: any) => {
   showEditDialog.value = true;
 };
 
-const deleteGroup = (group: any) => {
+const deleteGroup = async (group: any) => {
   if (!isSuperAdmin.value) {
     notification.warning('Only Super Admins can delete domain groups');
     return;
   }
   
+  // Use custom confirm dialog
+  const confirmed = await confirmDialog.danger(
+    `<p>Are you sure you want to delete the group <strong>"${group.name}"</strong>?</p>` +
+    `<p class="mt-2">This action cannot be undone.</p>` +
+    (group.domainsCount > 0 ? `<p class="mt-2 text-warning"><strong>⚠️ Warning:</strong> This group contains ${group.domainsCount} domain(s). They will become ungrouped.</p>` : ''),
+    '🗑️ Delete Domain Group'
+  );
+  
+  if (!confirmed) return;
+  
+  // Proceed with deletion
   selectedGroup.value = group;
-  showDeleteDialog.value = true;
+  await confirmDelete();
 };
 
 const viewGroupDomains = async (group: any) => {
   selectedGroup.value = group;
-  loadingDomains.value = true;
   showDomainsDialog.value = true;
   
+  // Load the domains
+  await loadGroupDomainsData(group.id);
+};
+
+const manageDomains = (group: any) => {
+  selectedGroup.value = group;
+  showBatchAddDialog.value = true;
+};
+
+const handleBatchAddSuccess = async () => {
+  // Reload groups and domains
+  await loadDomainGroups();
+  
+  if (selectedGroup.value) {
+    // Reload the specific group's domains
+    await loadGroupDomainsData(selectedGroup.value.id);
+  }
+  
+  showBatchAddDialog.value = false;
+};
+
+const loadGroupDomainsData = async (groupId: number) => {
+  loadingDomains.value = true;
+  
   try {
-    const result = await getGroupDomains(group.id);
+    console.log('🔍 Loading domains for group ID:', groupId);
+    const result = await getGroupDomains(groupId);
+    console.log('🔍 Result from getGroupDomains:', result);
+    
     if (result.success && result.data) {
-      groupDomains.value = result.data;
+      // API returns: { success: true, data: Domain[] } after service processes it
+      const domains = result.data;
+      console.log('🔍 Setting groupDomains to:', domains);
+      groupDomains.value = domains;
     } else {
-      notification.error('Failed to load group domains');
+      console.error('❌ Failed:', result);
       groupDomains.value = [];
     }
   } catch (error) {
-    notification.error('Error loading group domains');
+    console.error('❌ Error:', error);
     groupDomains.value = [];
   } finally {
     loadingDomains.value = false;
@@ -153,18 +202,27 @@ const saveGroup = async () => {
   try {
     let result;
     
+    console.log('🔍 saveGroup - selectedGroup:', selectedGroup.value);
+    console.log('🔍 saveGroup - mode:', selectedGroup.value ? 'UPDATE' : 'CREATE');
+    
     if (selectedGroup.value) {
       // Editing existing group
+      console.log('🔍 Updating group ID:', selectedGroup.value.id);
       result = await updateDomainGroup(selectedGroup.value.id, groupForm.value);
     } else {
       // Creating new group
+      console.log('🔍 Creating new group');
       result = await createDomainGroup(groupForm.value);
     }
     
+    console.log('🔍 saveGroup - result:', result);
+    
     if (result.success) {
-      // Close dialog and show success notification
+      // Close dialogs and clear selection
       showAddDialog.value = false;
       showEditDialog.value = false;
+      selectedGroup.value = null;  // Clear selection after save
+      
       notification.success(result.message || 'Domain group saved successfully');
       
       // Reload groups
@@ -223,6 +281,19 @@ onMounted(() => {
 
 <template>
   <div>
+    <!-- Confirm Dialog -->
+    <ConfirmDialog
+      v-model="confirmDialog.dialogState.value.isOpen"
+      :title="confirmDialog.dialogState.value.title"
+      :message="confirmDialog.dialogState.value.message"
+      :type="confirmDialog.dialogState.value.type"
+      :confirmText="confirmDialog.dialogState.value.confirmText"
+      :cancelText="confirmDialog.dialogState.value.cancelText"
+      :loading="confirmDialog.dialogState.value.loading"
+      @confirm="confirmDialog.handleConfirm"
+      @cancel="confirmDialog.handleCancel"
+    />
+    
     <!-- Header -->
     <v-row class="mb-4">
       <v-col cols="12">
@@ -411,6 +482,17 @@ onMounted(() => {
                       icon
                       size="small"
                       variant="text"
+                      color="success"
+                      @click="manageDomains(group)"
+                      title="Add Domains"
+                    >
+                      <v-icon>mdi-plus-circle</v-icon>
+                    </v-btn>
+                    <v-btn
+                      v-if="isSuperAdmin"
+                      icon
+                      size="small"
+                      variant="text"
                       color="primary"
                       @click="editGroup(group)"
                       title="Edit"
@@ -429,7 +511,7 @@ onMounted(() => {
                     >
                       <v-icon>mdi-delete</v-icon>
                     </v-btn>
-                    <v-tooltip v-if="!isSuperAdmin && group.domainsCount > 0" location="top">
+                    <v-tooltip v-if="isSuperAdmin && group.domainsCount > 0" location="top">
                       <template v-slot:activator="{ props }">
                         <v-icon v-bind="props" size="small" color="grey">mdi-information</v-icon>
                       </template>
@@ -661,7 +743,45 @@ onMounted(() => {
             {{ groupDomains.length }} domain(s)
           </v-chip>
           <v-spacer></v-spacer>
+          <v-btn
+            v-if="isSuperAdmin"
+            color="success"
+            variant="outlined"
+            @click="showDomainsDialog = false; manageDomains(selectedGroup)"
+          >
+            <v-icon start>mdi-plus</v-icon>
+            Add Domains
+          </v-btn>
           <v-btn @click="showDomainsDialog = false">Close</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Batch Add Domains Dialog -->
+    <v-dialog v-model="showBatchAddDialog" max-width="900px" scrollable>
+      <v-card>
+        <v-card-title class="d-flex align-center justify-space-between">
+          <span>Manage Domains: {{ selectedGroup?.name }}</span>
+          <v-chip
+            v-if="selectedGroup?.max_domains"
+            :color="selectedGroup?.isFull ? 'error' : 'info'"
+            variant="tonal"
+            size="small"
+          >
+            {{ selectedGroup?.limitLabel }}
+          </v-chip>
+        </v-card-title>
+        <v-divider></v-divider>
+        <v-card-text>
+          <BatchDomainSelector
+            v-if="selectedGroup"
+            :group-id="selectedGroup.id"
+            :group-name="selectedGroup.name"
+            :on-success="handleBatchAddSuccess"
+          />
+        </v-card-text>
+        <v-card-actions>
+          <v-btn @click="showBatchAddDialog = false">Close</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
