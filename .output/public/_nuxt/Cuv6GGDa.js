@@ -1,1 +1,0 @@
-import{Q as h,u as i,R as n,n as r}from"./B7XrKrHi.js";const d=h(async(t,o)=>{let a,e;const{checkAuth:s}=i(),u=([a,e]=n(()=>s()),a=await a,e(),a);if(!u&&t.path!=="/auth/login"&&t.path!=="/auth/register")return r("/auth/login");if(u&&(t.path==="/auth/login"||t.path==="/auth/register"))return r("/dashboard")});export{d as default};
