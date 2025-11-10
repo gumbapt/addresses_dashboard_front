@@ -27,6 +27,7 @@ export interface menu {
   subCaption?: string;
   external?: boolean;
   permission?: string;
+  superAdminOnly?: boolean; // NEW: Show only for Super Admins
 }
 
 const sidebarItem: menu[] = [
@@ -71,6 +72,12 @@ const sidebarItem: menu[] = [
     icon: "global-outline",
     to: "/domains",
     permission: "domain-read",
+  },
+  {
+    title: "Domain Groups",
+    icon: "folder-2-bold-duotone",
+    to: "/domain-groups",
+    superAdminOnly: true,
   },
   {
     title: "Reports",

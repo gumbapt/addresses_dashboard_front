@@ -2,22 +2,27 @@
 import { Icon } from "@iconify/vue";
 const props = defineProps({ item: Object, level: Number });
 
-// Verificar permissões
+// Check permissions
 const { hasPermission, isSuperAdmin } = usePermissions();
 
-// Computed para verificar se o item deve ser exibido
+// Computed to check if item should be displayed
 const shouldShowItem = computed(() => {
-  // Se não tem permissão definida, sempre mostrar
+  // If item is Super Admin only, check that first
+  if (props.item.superAdminOnly) {
+    return isSuperAdmin.value;
+  }
+  
+  // If no permission defined, always show
   if (!props.item.permission) {
     return true;
   }
   
-  // Super admin vê tudo
+  // Super admin sees everything
   if (isSuperAdmin.value) {
     return true;
   }
   
-  // Verificar permissão específica
+  // Check specific permission
   return hasPermission(props.item.permission);
 });
 </script>
