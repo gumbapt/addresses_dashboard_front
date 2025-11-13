@@ -40,7 +40,7 @@ const sidebarItem: menu[] = [
   {
     title: "Dashboard",
     icon: "graph-new-linear",
-    to: "/global-dashboard",
+    to: "/dashboard",
     permission: "report-read",
   },
   // {
