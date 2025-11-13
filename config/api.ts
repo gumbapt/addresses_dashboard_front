@@ -1,6 +1,6 @@
 export const API_CONFIG = {
-  BASE_URL: 'http://localhost:8007/api/admin',
-  //BASE_URL: 'https://dash3.50g.io/api/admin',
+  //BASE_URL: 'http://localhost:8007/api/admin',
+  BASE_URL: 'https://dash3.50g.io/api/admin',
   TIMEOUT: 10000, // 10 seconds
   ENDPOINTS: {
     LOGIN: '/login',
