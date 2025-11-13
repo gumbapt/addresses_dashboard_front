@@ -18,7 +18,7 @@
         </v-select>
       </v-col>
 
-      <v-col cols="12" md="3">
+      <v-col cols="12" md="2">
         <v-select
           v-model="localFilters.technology"
           :items="technologyOptions"
@@ -34,7 +34,7 @@
         </v-select>
       </v-col>
 
-      <v-col cols="12" md="3">
+      <v-col cols="12" md="2">
         <v-select
           v-model="localFilters.period"
           :items="periodOptions"
@@ -46,6 +46,21 @@
         >
           <template #prepend-inner>
             <v-icon size="small">mdi-calendar-range</v-icon>
+          </template>
+        </v-select>
+      </v-col>
+
+      <v-col cols="12" md="2">
+        <v-select
+          v-model="localSortBy"
+          :items="sortOptions"
+          label="Sort By"
+          variant="outlined"
+          density="compact"
+          @update:model-value="onSortChange"
+        >
+          <template #prepend-inner>
+            <v-icon size="small">mdi-sort</v-icon>
           </template>
         </v-select>
       </v-col>
@@ -107,9 +122,7 @@
             <th class="text-right">Provider Requests</th>
             <th class="text-right">Domain Total</th>
             <th class="text-center">% of Domain</th>
-            <th class="text-center">Success Rate</th>
             <th class="text-right">Avg Speed</th>
-            <th class="text-center">Period</th>
           </tr>
         </thead>
         <tbody>
@@ -163,24 +176,8 @@
               </v-chip>
             </td>
 
-            <!-- Success Rate -->
-            <td class="text-center">
-              <v-chip
-                :color="item.successRateColor"
-                variant="flat"
-                size="small"
-              >
-                {{ item.successRateFormatted }}%
-              </v-chip>
-            </td>
-
             <!-- Avg Speed -->
             <td class="text-right">{{ item.avgSpeedFormatted }} ms</td>
-
-            <!-- Period -->
-            <td class="text-center">
-              <span class="text-caption">{{ item.days_covered }} days</span>
-            </td>
           </tr>
         </tbody>
       </v-table>
@@ -242,11 +239,13 @@ const {
   filters,
   loading,
   error,
+  localSortBy,
   loadProviderRankings,
   updateFilters,
   clearFilters,
   goToPage,
-  changePerPage
+  changePerPage,
+  changeLocalSort
 } = useProviderRankings();
 
 // Local filters for UI
@@ -284,6 +283,13 @@ const technologyOptions = [
   { title: '🔴 Satellite', value: 'Satellite' }
 ];
 
+const sortOptions = [
+  { title: '📊 Provider Requests', value: 'total_requests' },
+  { title: '📊 Domain Total', value: 'domain_total' },
+  { title: '📈 % of Domain', value: 'percentage' },
+  { title: '⚡ Avg Speed', value: 'avg_speed' }
+];
+
 const perPageOptions = [
   { title: '15 per page', value: 15 },
   { title: '25 per page', value: 25 },
@@ -311,9 +317,14 @@ const onFilterChange = () => {
   loadProviderRankings();
 };
 
+const onSortChange = (newSort: string) => {
+  changeLocalSort(newSort);
+};
+
 const onClearFilters = () => {
   clearFilters();
   localFilters.value = { ...filters.value };
+  changeLocalSort('total_requests'); // Reset sort to default
   loadProviderRankings();
 };
 

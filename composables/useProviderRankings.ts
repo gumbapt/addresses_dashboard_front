@@ -21,9 +21,12 @@ export const useProviderRankings = () => {
   // Service instance
   const providerRankingService = new ProviderRankingService();
 
-  // Computed: formatted rankings
+  // Local sort field (for client-side sorting)
+  const localSortBy = ref<string>('total_requests');
+
+  // Computed: formatted rankings with client-side sorting
   const formattedRankings = computed(() => {
-    return rankings.value.map(ranking => ({
+    let sorted = rankings.value.map(ranking => ({
       ...ranking,
       requestsFormatted: ranking.total_requests.toLocaleString(),
       domainTotalFormatted: ranking.domain_total_requests?.toLocaleString() || '-',
@@ -37,6 +40,17 @@ export const useProviderRankings = () => {
       hasMedal: ranking.rank <= 3,
       medalEmoji: ranking.rank === 1 ? '🥇' : ranking.rank === 2 ? '🥈' : ranking.rank === 3 ? '🥉' : ''
     }));
+
+    // Client-side sorting
+    if (localSortBy.value === 'domain_total') {
+      sorted = sorted.sort((a, b) => (b.domain_total_requests || 0) - (a.domain_total_requests || 0));
+    } else if (localSortBy.value === 'percentage') {
+      sorted = sorted.sort((a, b) => (b.percentage_of_domain || 0) - (a.percentage_of_domain || 0));
+    } else if (localSortBy.value === 'avg_speed') {
+      sorted = sorted.sort((a, b) => a.avg_speed - b.avg_speed); // Ascending (faster first)
+    }
+
+    return sorted;
   });
 
   // Helper functions
@@ -133,6 +147,13 @@ export const useProviderRankings = () => {
     await loadProviderRankings();
   };
 
+  /**
+   * Change local sort (client-side)
+   */
+  const changeLocalSort = (sortBy: string) => {
+    localSortBy.value = sortBy;
+  };
+
   return {
     // State
     rankings,
@@ -142,6 +163,7 @@ export const useProviderRankings = () => {
     filters,
     loading,
     error,
+    localSortBy,
 
     // Actions
     loadProviderRankings,
@@ -149,7 +171,8 @@ export const useProviderRankings = () => {
     updateFilters,
     clearFilters,
     goToPage,
-    changePerPage
+    changePerPage,
+    changeLocalSort
   };
 };
 
