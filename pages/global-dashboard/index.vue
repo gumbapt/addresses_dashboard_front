@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue';
 import UiParentCard from '@/components/shared/UiParentCard.vue';
 import UiChildCard from '@/components/shared/UiChildCard.vue';
+import ProviderRankingTable from '@/components/ProviderRankingTable.vue';
 
 // Define middleware
 definePageMeta({
@@ -12,6 +13,7 @@ definePageMeta({
 const { rankingData, loading, error, currentSortBy, formattedRanking, topThree, globalStats, loadRanking } = useGlobalRanking();
 const { comparisonData, loading: comparisonLoading, error: comparisonError, loadComparison, formatNumber: formatNumberComp, getDiffColor, getDiffIcon } = useDomainComparison();
 const { domains: allDomains, loadDomains } = useDomains();
+const { formattedRankings, totalEntries, filters, loading: providerLoading, error: providerError, loadProviderRankings, updateFilters, clearFilters } = useProviderRankings();
 
 // States
 const currentTab = ref('ranking');
@@ -40,6 +42,7 @@ const domainOptions = computed(() => {
 onMounted(() => {
   loadRanking('score');
   loadDomains();
+  loadProviderRankings(); // Load provider rankings
 });
 
 // Function to change sorting
@@ -113,6 +116,10 @@ const getMedalIcon = (rank: number): string => {
           <v-tab value="ranking">
             <v-icon class="mr-2">mdi-trophy</v-icon>
             Domain Ranking
+          </v-tab>
+          <v-tab value="provider-ranking">
+            <v-icon class="mr-2">mdi-account-network</v-icon>
+            Provider Rankings
           </v-tab>
           <v-tab value="comparison">
             <v-icon class="mr-2">mdi-compare</v-icon>
@@ -637,6 +644,11 @@ const getMedalIcon = (rank: number): string => {
         </v-col>
       </v-row>
       </div>
+    </div>
+
+    <!-- TAB: Provider Rankings -->
+    <div v-if="currentTab === 'provider-ranking'">
+      <ProviderRankingTable />
     </div>
 
     <!-- TAB: Comparison -->

@@ -507,3 +507,53 @@ export interface MyDomainsResponse {
     total: number;
   };
 }
+
+// Provider Ranking Types
+export interface ProviderRanking {
+  rank: number;
+  domain_id: number;
+  domain_name: string;
+  domain_slug: string;
+  provider_id: number;
+  provider_name: string;
+  technology: string | null;
+  total_requests: number;
+  domain_total_requests: number;  // NEW: Total requests of the domain (all providers)
+  percentage_of_domain: number;   // NEW: % this provider represents in the domain
+  avg_success_rate: number;
+  avg_speed: number;
+  total_reports: number;
+  period_start: string;
+  period_end: string;
+  days_covered: number;
+}
+
+export interface ProviderRankingFilters {
+  provider_id?: number | null;
+  technology?: string | null;
+  period?: 'today' | 'yesterday' | 'last_week' | 'last_month' | 'last_year' | 'all_time' | null;
+  date_from?: string | null;
+  date_to?: string | null;
+  sort_by?: 'total_requests' | 'success_rate' | 'avg_speed' | 'total_reports';
+  page?: number;
+  per_page?: number;
+  limit?: number;  // Deprecated, use page/per_page
+}
+
+export interface ProviderRankingResponse {
+  success: boolean;
+  data: ProviderRanking[] | {
+    ranking: ProviderRanking[];
+    total_entries: number;
+    filters: ProviderRankingFilters;
+  };
+  pagination?: Pagination;
+  filters?: ProviderRankingFilters;
+  message?: string;
+}
+
+export interface Provider {
+  id: number;
+  name: string;
+  slug?: string;
+}
