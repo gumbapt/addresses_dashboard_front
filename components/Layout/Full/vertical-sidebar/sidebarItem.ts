@@ -32,22 +32,22 @@ export interface menu {
 
 const sidebarItem: menu[] = [
   { header: "Home" },
+  // {
+  //   title: "Dashboard",
+  //   icon: "graph-new-linear",
+  //   to: "/dashboard",
+  // },
   {
     title: "Dashboard",
     icon: "graph-new-linear",
-    to: "/dashboard",
-  },
-  {
-    title: "Global Dashboard",
-    icon: "chart-pie-outline",
     to: "/global-dashboard",
     permission: "report-read",
   },
-  {
-    title: "Dashboard Template",
-    icon: "presentation-graph-line-duotone",
-    to: "/dashboard-template",
-  },
+  // {
+  //   title: "Dashboard Template",
+  //   icon: "presentation-graph-line-duotone",
+  //   to: "/dashboard-template",
+  // },
   { header: "Management" },
   {
     title: "Users",
@@ -79,69 +79,69 @@ const sidebarItem: menu[] = [
     to: "/domain-groups",
     superAdminOnly: true,
   },
-  {
-    title: "Reports",
-    icon: "chart-histogram-linear",
-    to: "/reports",
-    permission: "report-read",
-  },
-  { header: "ui" },
-  {
-    title: "Alert",
-    icon: "volume-small-broken",
-    to: "/ui-components/alerts",
-  },
-  {
-    title: "Button",
-    icon: "tag-horizontal-outline",
-    to: "/ui-components/buttons",
-  },
-  {
-    title: "Cards",
-    icon: "cardholder-linear",
-    to: "/ui-components/cards",
-  },
-  {
-    title: "Tables",
-    icon: "suspension-outline",
-    to: "/ui-components/tables",
-  },
-  {
-    title: "Authentication",
-    icon: "shield-user-line-duotone",
-    to: "/auth/",
-    children: [
-      {
-        title: "Login",
-        to: "/auth/login",
-      },
-      {
-        title: "Register",
-        to: "/auth/register",
-      },
-      {
-        title: "Forgot Password",
-        to: "/auth/forgot-password",
-      },
-      {
-        title: "Two Steps",
-        to: "/auth/two-steps",
-      },
-      {
-        title: "Error",
-        to: "/auth/error",
-      },
-      {
-        title: "Maintenance",
-        to: "/auth/maintenance",
-      },
-    ],
-  },
-  {
-    title: "Error",
-    icon: "alert-circle-line-duotone",
-    to: "/error",
-  },
+  // {
+  //   title: "Reports",
+  //   icon: "chart-histogram-linear",
+  //   to: "/reports",
+  //   permission: "report-read",
+  // },
+  // { header: "ui" },
+  // {
+  //   title: "Alert",
+  //   icon: "volume-small-broken",
+  //   to: "/ui-components/alerts",
+  // },
+  // {
+  //   title: "Button",
+  //   icon: "tag-horizontal-outline",
+  //   to: "/ui-components/buttons",
+  // },
+  // {
+  //   title: "Cards",
+  //   icon: "cardholder-linear",
+  //   to: "/ui-components/cards",
+  // },
+  // {
+  //   title: "Tables",
+  //   icon: "suspension-outline",
+  //   to: "/ui-components/tables",
+  // },
+  // {
+  //   title: "Authentication",
+  //   icon: "shield-user-line-duotone",
+  //   to: "/auth/",
+  //   children: [
+  //     {
+  //       title: "Login",
+  //       to: "/auth/login",
+  //     },
+  //     {
+  //       title: "Register",
+  //       to: "/auth/register",
+  //     },
+  //     {
+  //       title: "Forgot Password",
+  //       to: "/auth/forgot-password",
+  //     },
+  //     {
+  //       title: "Two Steps",
+  //       to: "/auth/two-steps",
+  //     },
+  //     {
+  //       title: "Error",
+  //       to: "/auth/error",
+  //     },
+  //     {
+  //       title: "Maintenance",
+  //       to: "/auth/maintenance",
+  //     },
+  //   ],
+  // },
+  // {
+  //   title: "Error",
+  //   icon: "alert-circle-line-duotone",
+  //   to: "/error",
+  // },
 ];
 
 export default sidebarItem;

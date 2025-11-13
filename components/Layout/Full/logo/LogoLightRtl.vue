@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { RouterLink } from 'vue-router';
-import logolightrtl from '/images/logos/logo-light-rtl.svg';
+const logoSrc = '/images/logos/xyzies-logo.png';
 
 </script>
 <template>
     <div class="logo">
         <NuxtLink to="/">
-            <img :src="logolightrtl" alt="home" />
+            <img :src="logoSrc" alt="Xyzies Logo" style="max-width: 180px; height: auto;" />
         </NuxtLink>
     </div>
 </template>

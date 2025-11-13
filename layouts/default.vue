@@ -26,7 +26,7 @@ useHead({
                 </v-container>
                 
                 <!-- Chat Widget -->
-                <ChatWidget />
+                <!-- <ChatWidget /> -->
                 
                 <!-- Debug Button (apenas em desenvolvimento) -->
               <!--   <DebugButton /> -->
