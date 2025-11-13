@@ -78,17 +78,88 @@
       </v-col>
     </v-row>
 
-    <!-- Period Indicator -->
-    <v-row v-if="localFilters.period" class="mb-4">
+    <!-- Global Stats Badge (when provider is selected) -->
+    <v-row v-if="globalStats" class="mb-4">
       <v-col cols="12">
-        <v-chip
+        <v-alert
           color="primary"
           variant="tonal"
-          size="large"
+          border="start"
+          prominent
         >
-          <v-icon start size="small">mdi-calendar-check</v-icon>
-          {{ getPeriodLabel(localFilters.period) }}
-        </v-chip>
+          <v-alert-title class="text-h6 mb-2">
+            <v-icon start size="small">mdi-chart-line</v-icon>
+            {{ getSelectedProviderName() }} Global Statistics
+          </v-alert-title>
+          <div class="d-flex flex-wrap ga-4">
+            <div>
+              <strong>Provider Requests:</strong> 
+              {{ globalStats.provider_total_requests.toLocaleString() }}
+            </div>
+            <div>
+              <strong>Global Requests:</strong> 
+              {{ globalStats.global_total_requests.toLocaleString() }}
+            </div>
+            <div>
+              <strong>Percentage of Global:</strong> 
+              <v-chip 
+                color="primary"
+                variant="tonal" 
+                size="small"
+                class="ml-1"
+              >
+                {{ globalStats.percentage_of_global.toFixed(2) }}%
+              </v-chip>
+            </div>
+          </div>
+        </v-alert>
+      </v-col>
+    </v-row>
+
+    <!-- Aggregated Stats Header -->
+    <v-row v-if="aggregatedStats" class="mb-4">
+      <v-col cols="12" md="3">
+        <v-card variant="tonal" color="primary">
+          <v-card-text class="text-center">
+            <div class="text-h4 font-weight-bold">
+              {{ aggregatedStats.total_requests.toLocaleString() }}
+            </div>
+            <div class="text-caption text-medium-emphasis">Total Requests</div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+
+      <v-col cols="12" md="3">
+        <v-card variant="tonal" color="primary">
+          <v-card-text class="text-center">
+            <div class="text-h4 font-weight-bold">
+              {{ aggregatedStats.avg_speed.toFixed(0) }} ms
+            </div>
+            <div class="text-caption text-medium-emphasis">Avg Speed</div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+
+      <v-col cols="12" md="3">
+        <v-card variant="tonal" color="primary">
+          <v-card-text class="text-center">
+            <div class="text-h4 font-weight-bold">
+              {{ aggregatedStats.unique_domains }}
+            </div>
+            <div class="text-caption text-medium-emphasis">Unique Domains</div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+
+      <v-col cols="12" md="3">
+        <v-card variant="tonal" color="primary">
+          <v-card-text class="text-center">
+            <div class="text-h4 font-weight-bold">
+              {{ aggregatedStats.unique_providers }}
+            </div>
+            <div class="text-caption text-medium-emphasis">Unique Providers</div>
+          </v-card-text>
+        </v-card>
       </v-col>
     </v-row>
 
@@ -236,6 +307,9 @@ const {
   formattedRankings,
   totalEntries,
   pagination,
+  availableProviders,
+  aggregatedStats,
+  globalStats,
   filters,
   loading,
   error,
@@ -251,20 +325,16 @@ const {
 // Local filters for UI
 const localFilters = ref<ProviderRankingFilters>({ ...filters.value });
 
-// Options
-const providerOptions = [
-  { title: 'Earthlink', value: 5 },
-  { title: 'AT&T', value: 6 },
-  { title: 'Verizon', value: 7 },
-  { title: 'Comcast', value: 8 },
-  { title: 'HughesNet', value: 9 },
-  { title: 'Cox', value: 10 },
-  { title: 'GeoLinks', value: 11 },
-  { title: 'Spectrum', value: 15 },
-  { title: 'T-Mobile', value: 12 },
-  { title: 'Frontier', value: 13 },
-  { title: 'CenturyLink', value: 14 }
-];
+// Provider options - dynamically populated from availableProviders
+const providerOptions = computed(() => {
+  if (!availableProviders.value || availableProviders.value.length === 0) {
+    return [];
+  }
+  return availableProviders.value.map(p => ({
+    title: `${p.name} (${p.total_requests.toLocaleString()} requests)`,
+    value: p.id
+  }));
+});
 
 const periodOptions = [
   { title: '📅 Today', value: 'today' },
@@ -297,17 +367,11 @@ const perPageOptions = [
   { title: '100 per page', value: 100 }
 ];
 
-// Helper to get period label
-const getPeriodLabel = (period: string | null | undefined) => {
-  const labels: Record<string, string> = {
-    'today': 'Today',
-    'yesterday': 'Yesterday',
-    'last_week': 'Last 7 Days',
-    'last_month': 'Last 30 Days',
-    'last_year': 'Last 365 Days',
-    'all_time': 'All Time'
-  };
-  return period ? labels[period] || period : '';
+// Helper to get selected provider name
+const getSelectedProviderName = () => {
+  if (!localFilters.value.provider_id) return '';
+  const provider = availableProviders.value.find(p => p.id === localFilters.value.provider_id);
+  return provider ? provider.name : '';
 };
 
 const onFilterChange = () => {

@@ -2,6 +2,9 @@ import { ProviderRankingRepository } from '~/infrastructure/repositories/Provide
 import type { 
   ProviderRanking,
   ProviderRankingFilters,
+  AvailableProvider,
+  AggregatedStats,
+  GlobalStats,
   ApiResponse 
 } from '~/types/api';
 
@@ -20,6 +23,9 @@ export class ProviderRankingService {
     totalEntries: number;
     filters: ProviderRankingFilters;
     pagination?: any;
+    availableProviders?: AvailableProvider[];
+    aggregatedStats?: AggregatedStats;
+    globalStats?: GlobalStats;
   }>> {
     try {
       console.log('🔍 ProviderRankingService - getProviderRankings filters:', filters);
@@ -35,7 +41,10 @@ export class ProviderRankingService {
               rankings: response.data,
               totalEntries: response.pagination?.total || response.data.length,
               filters: response.filters || {},
-              pagination: response.pagination
+              pagination: response.pagination,
+              availableProviders: response.available_providers || [],
+              aggregatedStats: response.aggregated_stats || undefined,
+              globalStats: response.global_stats || undefined
             }
           };
         }
@@ -46,7 +55,10 @@ export class ProviderRankingService {
           data: {
             rankings: response.data.ranking || [],
             totalEntries: response.data.total_entries || 0,
-            filters: response.data.filters || {}
+            filters: response.data.filters || {},
+            availableProviders: response.available_providers || [],
+            aggregatedStats: response.aggregated_stats || undefined,
+            globalStats: response.global_stats || undefined
           }
         };
       }

@@ -49,12 +49,12 @@ const sidebarItem: menu[] = [
   //   to: "/dashboard-template",
   // },
   { header: "Management" },
-  {
-    title: "Users",
-    icon: "users-group-rounded-line-duotone",
-    to: "/users",
-    permission: "user-read",
-  },
+  // {
+  //   title: "Users",
+  //   icon: "users-group-rounded-line-duotone",
+  //   to: "/users",
+  //   permission: "user-read",
+  // },
   {
     title: "Administrators",
     icon: "shield-user-outline",

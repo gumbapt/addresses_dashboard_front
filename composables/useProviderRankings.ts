@@ -1,12 +1,15 @@
 import { ref, computed } from 'vue';
 import { ProviderRankingService } from '~/services/ProviderRankingService';
-import type { ProviderRanking, ProviderRankingFilters } from '~/types/api';
+import type { ProviderRanking, ProviderRankingFilters, AvailableProvider, AggregatedStats, GlobalStats } from '~/types/api';
 
 export const useProviderRankings = () => {
   // Reactive state
   const rankings = ref<ProviderRanking[]>([]);
   const totalEntries = ref(0);
   const pagination = ref<any>(null);
+  const availableProviders = ref<AvailableProvider[]>([]);
+  const aggregatedStats = ref<AggregatedStats | null>(null);
+  const globalStats = ref<GlobalStats | null>(null);
   const filters = ref<ProviderRankingFilters>({
     technology: null,
     provider_id: null,
@@ -88,10 +91,16 @@ export const useProviderRankings = () => {
         rankings.value = result.data.rankings;
         totalEntries.value = result.data.totalEntries;
         pagination.value = result.data.pagination || null;
+        availableProviders.value = result.data.availableProviders || [];
+        aggregatedStats.value = result.data.aggregatedStats || null;
+        globalStats.value = result.data.globalStats || null;
       } else {
         error.value = result.error || 'Failed to load provider rankings';
         rankings.value = [];
         pagination.value = null;
+        availableProviders.value = [];
+        aggregatedStats.value = null;
+        globalStats.value = null;
       }
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Unexpected error';
@@ -160,6 +169,9 @@ export const useProviderRankings = () => {
     formattedRankings,
     totalEntries,
     pagination,
+    availableProviders,
+    aggregatedStats,
+    globalStats,
     filters,
     loading,
     error,

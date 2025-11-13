@@ -403,7 +403,7 @@ onMounted(() => {
                 <td>{{ admin.lastLogin }}</td>
                 <td>
                   <div class="d-flex justify-center gap-1">
-                    <v-btn
+                    <!-- <v-btn
                       v-if="canAccess('chat', 'read')"
                       icon
                       size="small"
@@ -413,7 +413,7 @@ onMounted(() => {
                       title="Start Chat"
                     >
                       <v-icon>mdi-chat</v-icon>
-                    </v-btn>
+                    </v-btn> -->
                     <v-btn
                       v-if="hasPermission('admin-update')"
                       icon

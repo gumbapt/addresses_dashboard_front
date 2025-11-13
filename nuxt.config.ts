@@ -7,8 +7,7 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      title:
-        "Spikeadmin Free Nuxt 3 Dashboard",
+      title: "XYZIES Dashboard",
     },
   },
 

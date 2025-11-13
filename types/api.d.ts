@@ -438,12 +438,33 @@ export interface DomainComparisonItem {
   technologies?: any;
 }
 
+export interface DomainComparisonProviderData {
+  provider_id: number;
+  provider_name: string;
+  technology: string;
+  total_requests: number;
+  avg_success_rate: number;
+  avg_speed: number;
+  appearances: number;
+}
+
 export interface DomainComparisonData {
   domains: DomainComparisonItem[];
-  base_domain_id: number;
+  base_domain_id?: number;
+  total_compared: number;
+  provider_data?: {
+    all_providers: DomainComparisonProviderData[];
+    common_providers: DomainComparisonProviderData[];
+    unique_providers_count: number;
+  };
   period?: {
     date_from?: string;
     date_to?: string;
+  };
+  filters?: {
+    metric?: string | null;
+    date_from?: string | null;
+    date_to?: string | null;
   };
 }
 
@@ -548,6 +569,9 @@ export interface ProviderRankingResponse {
     filters: ProviderRankingFilters;
   };
   pagination?: Pagination;
+  available_providers?: AvailableProvider[];
+  aggregated_stats?: AggregatedStats;
+  global_stats?: GlobalStats;
   filters?: ProviderRankingFilters;
   message?: string;
 }
@@ -556,4 +580,25 @@ export interface Provider {
   id: number;
   name: string;
   slug?: string;
+}
+
+export interface AvailableProvider {
+  id: number;
+  name: string;
+  slug: string;
+  total_requests: number;
+}
+
+export interface AggregatedStats {
+  total_requests: number;
+  avg_success_rate: number;
+  avg_speed: number;
+  unique_domains: number;
+  unique_providers: number;
+}
+
+export interface GlobalStats {
+  provider_total_requests: number;
+  global_total_requests: number;
+  percentage_of_global: number;
 }
