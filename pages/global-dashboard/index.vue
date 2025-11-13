@@ -107,30 +107,6 @@ const getTechColor = (technology: string | null) => {
   };
   return technology ? techMap[technology] || 'grey' : 'grey';
 };
-
-// Get provider data for specific domain
-const getProviderInDomain = (domain: any, providerName: string) => {
-  if (!domain.metrics.top_providers) return null;
-  const provider = domain.metrics.top_providers.find((p: any) => p.name === providerName);
-  if (!provider) return null;
-  return {
-    requests: provider.requests
-  };
-};
-
-// Filter providers that exist in at least one domain
-const getProvidersInDomains = computed(() => {
-  if (!comparisonData.value?.provider_data?.all_providers || !comparisonData.value?.domains) {
-    return [];
-  }
-  
-  return comparisonData.value.provider_data.all_providers.filter(provider => {
-    // Check if provider exists in at least one domain's top_providers
-    return comparisonData.value.domains.some(domain => 
-      domain.metrics.top_providers?.some((p: any) => p.name === provider.provider_name)
-    );
-  });
-});
 </script>
 
 <template>
@@ -959,87 +935,33 @@ const getProvidersInDomains = computed(() => {
                   </v-col>
                 </v-row>
 
-                <!-- Provider Comparison by Domain -->
-                <div v-if="comparisonData.provider_data.all_providers.length > 0" class="mb-6">
+                <!-- All Providers (Aggregated Data) -->
+                <div v-if="comparisonData.provider_data.common_providers.length > 0">
                   <h3 class="text-h6 mb-3">
                     <v-icon start size="small">mdi-chart-bar</v-icon>
-                    Provider Comparison Across Domains
+                    All Providers in Selected Domains
                   </h3>
                   <v-alert color="primary" variant="tonal" density="compact" class="mb-3">
-                    Compare how each provider performs in each domain side-by-side
+                    Aggregated data for all providers across {{ comparisonData.total_compared }} selected domains
                   </v-alert>
                   <v-table density="compact">
                     <thead>
                       <tr>
-                        <th class="text-left">Provider</th>
-                        <th class="text-left">Technology</th>
-                        <th 
-                          v-for="domain in comparisonData.domains" 
-                          :key="domain.domain.id"
-                          class="text-center"
-                        >
-                          {{ domain.domain.name }}
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr 
-                        v-for="provider in getProvidersInDomains.slice(0, 20)" 
-                        :key="provider.provider_id"
-                      >
-                        <td class="font-weight-medium">{{ provider.provider_name }}</td>
-                        <td>
-                          <v-chip
-                            size="small"
-                            variant="tonal"
-                            :color="getTechColor(provider.technology)"
-                          >
-                            {{ provider.technology }}
-                          </v-chip>
-                        </td>
-                        <td 
-                          v-for="domain in comparisonData.domains" 
-                          :key="domain.domain.id"
-                          class="text-center"
-                        >
-                          <template v-if="getProviderInDomain(domain, provider.provider_name)">
-                            <v-chip size="small" variant="tonal" color="success">
-                              {{ getProviderInDomain(domain, provider.provider_name).requests }} req
-                            </v-chip>
-                          </template>
-                          <v-chip v-else size="small" variant="outlined" color="grey">
-                            -
-                          </v-chip>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </v-table>
-                </div>
-
-                <!-- Common Providers -->
-                <div v-if="comparisonData.provider_data.common_providers.length > 0">
-                  <h3 class="text-h6 mb-3">
-                    <v-icon start size="small" color="success">mdi-check-circle</v-icon>
-                    Common Providers (Present in all {{ comparisonData.total_compared }} domains)
-                  </h3>
-                  <v-table density="compact">
-                    <thead>
-                      <tr>
+                        <th class="text-left">Rank</th>
                         <th class="text-left">Provider</th>
                         <th class="text-left">Technology</th>
                         <th class="text-right">Total Requests</th>
                         <th class="text-right">Avg Speed</th>
+                        <th class="text-center">Appearances</th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr 
-                        v-for="provider in comparisonData.provider_data.common_providers.slice(0, 10)" 
+                        v-for="(provider, index) in comparisonData.provider_data.common_providers" 
                         :key="provider.provider_id"
                       >
-                        <td>
-                          <v-icon start size="small" color="success">mdi-check</v-icon>
-                          {{ provider.provider_name }}
-                        </td>
+                        <td class="font-weight-bold">#{{ index + 1 }}</td>
+                        <td class="font-weight-medium">{{ provider.provider_name }}</td>
                         <td>
                           <v-chip
                             size="small"
@@ -1053,21 +975,19 @@ const getProvidersInDomains = computed(() => {
                           {{ provider.total_requests.toLocaleString() }}
                         </td>
                         <td class="text-right">{{ provider.avg_speed.toFixed(0) }} ms</td>
+                        <td class="text-center">
+                          <v-chip 
+                            size="small" 
+                            variant="tonal" 
+                            :color="provider.appearances >= comparisonData.total_compared * 20 ? 'success' : 'info'"
+                          >
+                            {{ provider.appearances }} reports
+                          </v-chip>
+                        </td>
                       </tr>
                     </tbody>
                   </v-table>
                 </div>
-
-                <!-- No Common Providers Message -->
-                <v-alert 
-                  v-if="comparisonData.provider_data.common_providers.length === 0"
-                  type="info"
-                  variant="tonal"
-                  class="mt-4"
-                >
-                  <v-icon start>mdi-information</v-icon>
-                  No providers are common to all selected domains
-                </v-alert>
               </v-card-text>
             </v-card>
           </v-col>
