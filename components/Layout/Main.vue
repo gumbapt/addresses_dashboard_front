@@ -61,7 +61,7 @@ const sDrawer = ref(true);
               <Menu2Icon size="20" stroke-width="1.5" />
             </v-btn>
             <!-- Notification -->
-            <LayoutFullVerticalHeaderNotificationDD />
+            <!-- <LayoutFullVerticalHeaderNotificationDD /> -->
           </div>
           <div>
             <!-- User Profile -->
