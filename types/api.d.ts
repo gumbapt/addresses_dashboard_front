@@ -366,6 +366,13 @@ export interface AggregatedDomainStats {
     failed_requests: number;
     avg_requests_per_hour: number;
   }>;
+  // Optional: Direct technology distribution (if provided by API)
+  technology_distribution?: Array<{
+    technology: string;
+    count: number;
+    total_count?: number;
+    percentage?: number;
+  }>;
 }
 
 export interface AggregatedDomainResponse {
