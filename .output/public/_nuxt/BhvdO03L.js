@@ -1,0 +1,1 @@
+import{O as s}from"./B3_Rn74p.js";const o=s("/images/products/s4.jpg"),g=s("/images/products/s5.jpg"),r=s("/images/products/s7.jpg"),t=s("/images/products/s11.jpg");export{g as a,r as b,t as c,o as p};
