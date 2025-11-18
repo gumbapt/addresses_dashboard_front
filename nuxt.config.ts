@@ -8,6 +8,17 @@ export default defineNuxtConfig({
   app: {
     head: {
       title: "XYZIES Dashboard",
+      link: [
+        {
+          rel: "icon",
+          type: "image/png",
+          href: "/images/logos/xyzies-logo.png"
+        },
+        {
+          rel: "shortcut icon",
+          href: "/images/favicon.png"
+        }
+      ]
     },
   },
 

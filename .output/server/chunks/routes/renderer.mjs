@@ -38,7 +38,7 @@ function createHead(options = {}) {
   return head;
 }
 
-const appHead = {"meta":[{"name":"viewport","content":"width=device-width, initial-scale=1"},{"charset":"utf-8"}],"link":[],"style":[],"script":[],"noscript":[],"title":"XYZIES Dashboard"};
+const appHead = {"meta":[{"name":"viewport","content":"width=device-width, initial-scale=1"},{"charset":"utf-8"}],"link":[{"rel":"icon","type":"image/png","href":"/images/logos/xyzies-logo.png"},{"rel":"shortcut icon","href":"/images/favicon.png"}],"style":[],"script":[],"noscript":[],"title":"XYZIES Dashboard"};
 
 const appRootTag = "div";
 
