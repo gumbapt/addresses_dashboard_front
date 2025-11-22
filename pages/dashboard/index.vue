@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import UiParentCard from '@/components/shared/UiParentCard.vue';
 import UiChildCard from '@/components/shared/UiChildCard.vue';
 import ProviderRankingTable from '@/components/ProviderRankingTable.vue';
@@ -14,12 +14,29 @@ const { rankingData, loading, error, currentSortBy, formattedRanking, topThree, 
 const { comparisonData, loading: comparisonLoading, error: comparisonError, loadComparison, formatNumber: formatNumberComp, getDiffColor, getDiffIcon } = useDomainComparison();
 const { domains: allDomains, loadDomains } = useDomains();
 const { formattedRankings, totalEntries, filters, loading: providerLoading, error: providerError, loadProviderRankings, updateFilters, clearFilters } = useProviderRankings();
+const { 
+  reportData,
+  aggregatedData,
+  loading: domainLoading, 
+  error: domainError, 
+  loadDashboardStats,
+  loadAggregatedStats,
+  providerChartData, 
+  topStatesChartData, 
+  speedByStateChartData, 
+  technologyChartData, 
+  topCards
+} = useDomainDashboard();
+const { formattedReports, loading: reportsLoading, loadReports } = useReports();
 
 // States
 const currentTab = ref('ranking');
 const selectedDomainIds = ref<number[]>([]);
 const dateFrom = ref<string>('');
 const dateTo = ref<string>('');
+const selectedDomainId = ref<number | null>(null);
+const selectedReportId = ref<number | string>('all');
+const showAllReports = ref(false);
 
 // Sort options
 const sortOptions = [
@@ -55,6 +72,61 @@ const viewDomainDashboard = (domainId: number) => {
   navigateTo(`/domains/${domainId}/dashboard`);
 };
 
+// Domain info for selected domain
+const currentDomain = computed(() => {
+  if (!selectedDomainId.value || !allDomains.value || !Array.isArray(allDomains.value)) return null;
+  return allDomains.value.find((d: any) => d.id === selectedDomainId.value);
+});
+
+// Reports do domínio selecionado
+const domainReports = computed(() => {
+  if (!selectedDomainId.value) return [];
+  return formattedReports.value.filter((r: any) => r.domain_id === selectedDomainId.value);
+});
+
+// Opções do seletor de reports
+const reportSelectOptions = computed(() => {
+  const options = [
+    { id: 'all', reportDate: 'All Reports Combined', statusColor: 'primary', data_version: 'Aggregated' }
+  ];
+  return [...options, ...domainReports.value];
+});
+
+// Watch para carregar dados quando domínio for selecionado
+watch(selectedDomainId, async (newDomainId) => {
+  if (newDomainId) {
+    await loadReports({ domain_id: newDomainId, per_page: 100 });
+    await loadAggregatedStats(newDomainId);
+    selectedReportId.value = 'all';
+    showAllReports.value = false;
+  }
+});
+
+// Watch para carregar dados quando report mudar
+watch(selectedReportId, async (newId) => {
+  if (!selectedDomainId.value) return;
+  
+  if (newId === 'all') {
+    showAllReports.value = false;
+    await loadAggregatedStats(selectedDomainId.value);
+  } else if (newId) {
+    showAllReports.value = false;
+    await loadDashboardStats(newId as number);
+  }
+});
+
+// Info para display
+const displayInfo = computed(() => {
+  if (selectedReportId.value === 'all' && aggregatedData.value) {
+    return `Showing aggregated data from ${domainReports.value.length} report(s)`;
+  }
+  const selectedReport = domainReports.value.find((r: any) => r.id === selectedReportId.value);
+  if (selectedReport && selectedReportId.value !== 'all') {
+    return `Report Date: ${selectedReport.reportDate} | Status: ${selectedReport.statusLabel}`;
+  }
+  return '';
+});
+
 // Compare domains
 const compare = () => {
   if (selectedDomainIds.value.length < 2) {
@@ -80,6 +152,16 @@ const formatNumber = (num: number): string => {
     return (num / 1000).toFixed(1) + 'K';
   }
   return num.toString();
+};
+
+// Format percentage
+const formatPercentage = (num: number): string => {
+  return num.toFixed(1) + '%';
+};
+
+// Format decimal
+const formatDecimal = (num: number): string => {
+  return num.toFixed(2);
 };
 
 // Medal color by position
@@ -132,6 +214,10 @@ const getTechColor = (technology: string | null) => {
           <v-tab value="provider-ranking">
             <v-icon class="mr-2">mdi-account-network</v-icon>
             Provider Rankings
+          </v-tab>
+          <v-tab value="domain-dashboard">
+            <v-icon class="mr-2">mdi-chart-box</v-icon>
+            Domain Dashboard
           </v-tab>
           <v-tab value="comparison">
             <v-icon class="mr-2">mdi-compare</v-icon>
@@ -661,6 +747,439 @@ const getTechColor = (technology: string | null) => {
     <!-- TAB: Provider Rankings -->
     <div v-if="currentTab === 'provider-ranking'">
       <ProviderRankingTable />
+    </div>
+
+    <!-- TAB: Domain Dashboard -->
+    <div v-if="currentTab === 'domain-dashboard'">
+      <!-- Domain Selector -->
+      <v-row class="mb-4">
+        <v-col cols="12">
+          <UiParentCard>
+            <v-row>
+              <v-col cols="12" md="6">
+                <v-select
+                  v-model="selectedDomainId"
+                  :items="domainOptions"
+                  label="Select Domain"
+                  variant="outlined"
+                  prepend-inner-icon="mdi-domain"
+                  hint="Choose a domain to view its detailed dashboard"
+                  persistent-hint
+                  clearable
+                >
+                  <template v-slot:item="{ props, item }">
+                    <v-list-item v-bind="props">
+                      <template v-slot:prepend>
+                        <v-icon color="primary">mdi-domain</v-icon>
+                      </template>
+                      <v-list-item-title>{{ item.raw.title }}</v-list-item-title>
+                    </v-list-item>
+                  </template>
+                </v-select>
+              </v-col>
+              <v-col cols="12" md="6" v-if="selectedDomainId">
+                <v-select
+                  v-model="selectedReportId"
+                  :items="reportSelectOptions"
+                  item-title="reportDate"
+                  item-value="id"
+                  label="Select Report"
+                  variant="outlined"
+                  density="compact"
+                  :loading="reportsLoading"
+                  prepend-inner-icon="mdi-calendar"
+                >
+                  <template v-slot:item="{ props, item }">
+                    <v-list-item v-bind="props">
+                      <template v-slot:prepend>
+                        <v-chip :color="item.raw.statusColor" size="x-small" variant="tonal"></v-chip>
+                      </template>
+                      <template v-slot:subtitle>
+                        <span class="text-caption" v-if="item.raw.id !== 'all'">ID: {{ item.raw.id }} | Version: {{ item.raw.data_version }}</span>
+                        <span class="text-caption" v-else>Combined data from all reports</span>
+                      </template>
+                    </v-list-item>
+                  </template>
+                </v-select>
+              </v-col>
+            </v-row>
+            <v-row v-if="selectedDomainId && displayInfo">
+              <v-col cols="12">
+                <v-alert color="info" variant="tonal" density="compact">
+                  <v-icon start>mdi-information</v-icon>
+                  {{ displayInfo }}
+                </v-alert>
+              </v-col>
+            </v-row>
+          </UiParentCard>
+        </v-col>
+      </v-row>
+
+      <!-- Empty State -->
+      <v-row v-if="!selectedDomainId">
+        <v-col cols="12">
+          <UiParentCard>
+            <div class="text-center py-12">
+              <v-icon size="80" color="grey">mdi-chart-box-outline</v-icon>
+              <h3 class="text-h5 mt-4 mb-2">Select a domain</h3>
+              <p class="text-medium-emphasis">
+                Choose a domain from the dropdown above to view its detailed dashboard
+              </p>
+            </div>
+          </UiParentCard>
+        </v-col>
+      </v-row>
+
+      <!-- Loading -->
+      <v-row v-else-if="domainLoading">
+        <v-col cols="12">
+          <UiParentCard>
+            <div class="d-flex justify-center align-center py-8">
+              <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
+            </div>
+          </UiParentCard>
+        </v-col>
+      </v-row>
+
+      <!-- Error -->
+      <v-row v-else-if="domainError">
+        <v-col cols="12">
+          <UiParentCard>
+            <v-alert type="error" variant="tonal" class="mb-0">
+              {{ domainError }}
+            </v-alert>
+          </UiParentCard>
+        </v-col>
+      </v-row>
+
+      <!-- Dashboard Content -->
+      <div v-else-if="selectedDomainId && (reportData || aggregatedData)">
+        <!-- Top Cards -->
+        <v-row class="mb-4">
+          <!-- Total Requests -->
+          <v-col cols="12" sm="6" md="3">
+            <v-card elevation="2" class="h-100">
+              <v-card-text>
+                <div class="d-flex align-center justify-space-between mb-2">
+                  <div class="text-h6 text-medium-emphasis">Total Requests</div>
+                  <v-icon color="primary" size="32">mdi-chart-line</v-icon>
+                </div>
+                <div class="text-h3 font-weight-bold text-primary">
+                  {{ formatNumber(topCards.totalRequests) }}
+                </div>
+                <div class="text-caption text-medium-emphasis mt-1">
+                  All time requests
+                </div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+
+          <!-- Success Rate -->
+          <v-col cols="12" sm="6" md="3">
+            <v-card elevation="2" class="h-100">
+              <v-card-text>
+                <div class="d-flex align-center justify-space-between mb-2">
+                  <div class="text-h6 text-medium-emphasis">Success Rate</div>
+                  <v-icon color="success" size="32">mdi-check-circle</v-icon>
+                </div>
+                <div class="text-h3 font-weight-bold text-success">
+                  {{ formatPercentage(topCards.successRate) }}
+                </div>
+                <div class="text-caption text-medium-emphasis mt-1">
+                  Successful requests
+                </div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+
+          <!-- Daily Average -->
+          <v-col cols="12" sm="6" md="3">
+            <v-card elevation="2" class="h-100">
+              <v-card-text>
+                <div class="d-flex align-center justify-space-between mb-2">
+                  <div class="text-h6 text-medium-emphasis">Daily Average</div>
+                  <v-icon color="info" size="32">mdi-calendar-today</v-icon>
+                </div>
+                <div class="text-h3 font-weight-bold text-info">
+                  {{ formatDecimal(topCards.dailyAverage) }}
+                </div>
+                <div class="text-caption text-medium-emphasis mt-1">
+                  Average per day
+                </div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+
+          <!-- Unique Providers -->
+          <v-col cols="12" sm="6" md="3">
+            <v-card elevation="2" class="h-100">
+              <v-card-text>
+                <div class="d-flex align-center justify-space-between mb-2">
+                  <div class="text-h6 text-medium-emphasis">Unique Providers</div>
+                  <v-icon color="warning" size="32">mdi-domain</v-icon>
+                </div>
+                <div class="text-h3 font-weight-bold text-warning">
+                  {{ topCards.uniqueProviders }}
+                </div>
+                <div class="text-caption text-medium-emphasis mt-1">
+                  Different providers
+                </div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+        </v-row>
+
+        <!-- Charts Row 1 -->
+        <v-row class="mb-4">
+          <!-- Provider Distribution -->
+          <v-col cols="12" md="6">
+            <UiParentCard>
+              <div v-if="providerChartData.series.length > 0">
+                <apexchart
+                  type="donut"
+                  height="350"
+                  :options="{
+                    chart: {
+                      type: 'donut',
+                      fontFamily: 'inherit',
+                      height: 350
+                    },
+                    title: {
+                      text: 'Provider Distribution',
+                      align: 'left',
+                      style: {
+                        fontSize: '18px',
+                        fontWeight: 600
+                      }
+                    },
+                    labels: providerChartData.labels,
+                    responsive: [{
+                      breakpoint: 480,
+                      options: {
+                        chart: { width: 300 },
+                        legend: { position: 'bottom' }
+                      }
+                    }],
+                    plotOptions: {
+                      pie: {
+                        donut: {
+                          labels: {
+                            show: true,
+                            total: {
+                              show: true,
+                              label: 'Total',
+                              fontSize: '20px',
+                              fontWeight: 600
+                            }
+                          }
+                        }
+                      }
+                    },
+                    legend: {
+                      position: 'bottom'
+                    },
+                    dataLabels: {
+                      enabled: true,
+                      formatter: function(val: number) {
+                        return val.toFixed(1) + '%';
+                      }
+                    }
+                  }"
+                  :series="providerChartData.series"
+                />
+              </div>
+              <div v-else class="text-center py-8">
+                <v-icon size="64" color="grey">mdi-chart-donut</v-icon>
+                <p class="text-h6 mt-4 text-medium-emphasis">No provider data available</p>
+              </div>
+            </UiParentCard>
+          </v-col>
+
+          <!-- Top States -->
+          <v-col cols="12" md="6">
+            <UiParentCard>
+              <div v-if="topStatesChartData.data.length > 0">
+                <apexchart
+                  type="bar"
+                  height="350"
+                  :options="{
+                    chart: {
+                      type: 'bar',
+                      fontFamily: 'inherit',
+                      toolbar: { show: false }
+                    },
+                    title: {
+                      text: 'Top States by Requests',
+                      align: 'left',
+                      style: {
+                        fontSize: '18px',
+                        fontWeight: 600
+                      }
+                    },
+                    plotOptions: {
+                      bar: {
+                        horizontal: true,
+                        borderRadius: 4,
+                        dataLabels: { position: 'top' }
+                      }
+                    },
+                    dataLabels: {
+                      enabled: true,
+                      formatter: function(val: number) {
+                        if (val >= 1000000) {
+                          return (val / 1000000).toFixed(1) + 'M';
+                        }
+                        if (val >= 1000) {
+                          return (val / 1000).toFixed(1) + 'K';
+                        }
+                        return val.toString();
+                      },
+                      offsetX: 30
+                    },
+                    xaxis: {
+                      categories: topStatesChartData.categories
+                    },
+                    colors: ['#1976d2']
+                  }"
+                  :series="[{ name: 'Requests', data: topStatesChartData.data }]"
+                />
+              </div>
+              <div v-else class="text-center py-8">
+                <v-icon size="64" color="grey">mdi-chart-bar</v-icon>
+                <p class="text-h6 mt-4 text-medium-emphasis">No state data available</p>
+              </div>
+            </UiParentCard>
+          </v-col>
+        </v-row>
+
+        <!-- Charts Row 2 -->
+        <v-row>
+          <!-- Average Speed by State -->
+          <v-col cols="12" md="6">
+            <UiParentCard>
+              <div v-if="speedByStateChartData.data.length > 0">
+                <apexchart
+                  type="bar"
+                  height="350"
+                  :options="{
+                    chart: {
+                      type: 'bar',
+                      fontFamily: 'inherit',
+                      toolbar: { show: false }
+                    },
+                    title: {
+                      text: 'Average Speed by State',
+                      align: 'left',
+                      style: {
+                        fontSize: '18px',
+                        fontWeight: 600
+                      }
+                    },
+                    plotOptions: {
+                      bar: {
+                        horizontal: false,
+                        borderRadius: 8,
+                        columnWidth: '55%',
+                        distributed: false
+                      }
+                    },
+                    dataLabels: {
+                      enabled: false
+                    },
+                    xaxis: {
+                      categories: speedByStateChartData.categories,
+                      labels: {
+                        style: {
+                          fontSize: '12px'
+                        }
+                      }
+                    },
+                    yaxis: {
+                      title: {
+                        text: 'Average Speed (Mbps)'
+                      }
+                    },
+                    colors: ['#4caf50'],
+                    grid: {
+                      show: true,
+                      borderColor: '#f0f0f0'
+                    }
+                  }"
+                  :series="[{ name: 'Avg Speed (Mbps)', data: speedByStateChartData.data }]"
+                />
+              </div>
+              <div v-else class="text-center py-8">
+                <v-icon size="64" color="grey">mdi-speedometer</v-icon>
+                <p class="text-h6 mt-4 text-medium-emphasis">No speed data available</p>
+              </div>
+            </UiParentCard>
+          </v-col>
+
+          <!-- Technology Distribution -->
+          <v-col cols="12" md="6">
+            <UiParentCard>
+              <div v-if="technologyChartData.series.length > 0">
+                <apexchart
+                  type="donut"
+                  height="350"
+                  :options="{
+                    chart: {
+                      type: 'donut',
+                      fontFamily: 'inherit',
+                      height: 350
+                    },
+                    title: {
+                      text: 'Technology Distribution',
+                      align: 'left',
+                      style: {
+                        fontSize: '18px',
+                        fontWeight: 600
+                      }
+                    },
+                    labels: technologyChartData.labels,
+                    responsive: [{
+                      breakpoint: 480,
+                      options: {
+                        chart: { width: 300 },
+                        legend: { position: 'bottom' }
+                      }
+                    }],
+                    plotOptions: {
+                      pie: {
+                        donut: {
+                          labels: {
+                            show: true,
+                            total: {
+                              show: true,
+                              label: 'Total',
+                              fontSize: '20px',
+                              fontWeight: 600
+                            }
+                          }
+                        }
+                      }
+                    },
+                    legend: {
+                      position: 'bottom'
+                    },
+                    dataLabels: {
+                      enabled: true,
+                      formatter: function(val: number) {
+                        return val.toFixed(1) + '%';
+                      }
+                    }
+                  }"
+                  :series="technologyChartData.series"
+                />
+              </div>
+              <div v-else class="text-center py-8">
+                <v-icon size="64" color="grey">mdi-chart-donut</v-icon>
+                <p class="text-h6 mt-4 text-medium-emphasis">No technology data available</p>
+              </div>
+            </UiParentCard>
+          </v-col>
+        </v-row>
+      </div>
     </div>
 
     <!-- TAB: Comparison -->
