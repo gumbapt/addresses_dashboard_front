@@ -566,6 +566,7 @@ export interface ProviderRankingFilters {
   page?: number;
   per_page?: number;
   limit?: number;  // Deprecated, use page/per_page
+  aggregate_by_provider?: boolean;  // When true, aggregates all technologies of the same provider for each domain
 }
 
 export interface ProviderRankingResponse {

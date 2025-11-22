@@ -33,6 +33,9 @@ export class ProviderRankingRepository {
       if (filters?.sort_by) {
         queryParams.append('sort_by', filters.sort_by);
       }
+      if (filters?.aggregate_by_provider !== undefined) {
+        queryParams.append('aggregate_by_provider', filters.aggregate_by_provider ? 'true' : 'false');
+      }
       
       // Pagination (preferred over limit)
       if (filters?.page) {

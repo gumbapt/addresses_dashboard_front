@@ -2,7 +2,7 @@
   <div class="provider-rankings">
     <!-- Filters Row 1 -->
     <v-row class="mb-4">
-      <v-col cols="12" md="3">
+      <v-col cols="12" md="2">
         <v-select
           v-model="localFilters.provider_id"
           :items="providerOptions"
@@ -65,7 +65,36 @@
         </v-select>
       </v-col>
 
-      <v-col cols="12" md="3">
+      <v-col cols="12" md="2">
+        <v-card variant="outlined" class="pa-2">
+          <div class="d-flex align-center ga-2">
+            <v-icon size="small" color="primary">mdi-group</v-icon>
+            <v-switch
+              v-model="localFilters.aggregate_by_provider"
+              label="Aggregate by Provider"
+              color="primary"
+              density="compact"
+              hide-details
+              @update:model-value="onFilterChange"
+            />
+          </div>
+          <v-tooltip location="top">
+            <template v-slot:activator="{ props }">
+              <v-icon 
+                v-bind="props" 
+                size="x-small" 
+                color="grey" 
+                class="ml-1"
+              >
+                mdi-information-outline
+              </v-icon>
+            </template>
+            <span>When enabled, aggregates all technologies of the same provider for each domain</span>
+          </v-tooltip>
+        </v-card>
+      </v-col>
+
+      <v-col cols="12" md="2">
         <v-btn
           block
           variant="outlined"
@@ -215,14 +244,41 @@
 
             <!-- Technology -->
             <td>
-              <v-chip
-                v-if="item.technology"
-                :color="item.techColor"
-                variant="tonal"
-                size="small"
-              >
-                {{ item.technology }}
-              </v-chip>
+              <div v-if="item.technology" class="d-flex flex-wrap ga-1">
+                <template v-if="hasMultipleTechnologies(item.technology)">
+                  <v-chip
+                    v-for="(tech, index) in getTechnologies(item.technology)"
+                    :key="index"
+                    :color="getTechColor(tech)"
+                    variant="tonal"
+                    size="x-small"
+                    class="mr-1 mb-1"
+                  >
+                    {{ tech.trim() }}
+                  </v-chip>
+                  <v-tooltip location="top">
+                    <template v-slot:activator="{ props }">
+                      <v-icon 
+                        v-bind="props" 
+                        size="x-small" 
+                        color="primary" 
+                        class="ml-1"
+                      >
+                        mdi-information
+                      </v-icon>
+                    </template>
+                    <span>Multiple technologies aggregated</span>
+                  </v-tooltip>
+                </template>
+                <v-chip
+                  v-else
+                  :color="item.techColor"
+                  variant="tonal"
+                  size="small"
+                >
+                  {{ item.technology }}
+                </v-chip>
+              </div>
               <span v-else class="text-medium-emphasis">Unknown</span>
             </td>
 
@@ -388,6 +444,7 @@ const onSortChange = (newSort: string) => {
 const onClearFilters = () => {
   clearFilters();
   localFilters.value = { ...filters.value };
+  localFilters.value.aggregate_by_provider = false; // Reset aggregate toggle
   changeLocalSort('total_requests'); // Reset sort to default
   loadProviderRankings();
 };
@@ -407,6 +464,29 @@ const onNextPage = () => {
 const onPerPageChange = (newPerPage: number) => {
   localFilters.value.per_page = newPerPage;
   changePerPage(newPerPage);
+};
+
+// Helper functions for technology display
+const hasMultipleTechnologies = (technology: string | null): boolean => {
+  if (!technology) return false;
+  return technology.includes(',');
+};
+
+const getTechnologies = (technology: string): string[] => {
+  if (!technology) return [];
+  return technology.split(',').map(t => t.trim()).filter(t => t.length > 0);
+};
+
+const getTechColor = (technology: string) => {
+  const techMap: Record<string, string> = {
+    'Fiber': 'blue',
+    'Cable': 'green',
+    'DSL': 'orange',
+    'Mobile': 'purple',
+    'Satellite': 'red',
+    'Unknown': 'grey'
+  };
+  return techMap[technology] || 'grey';
 };
 
 onMounted(() => {

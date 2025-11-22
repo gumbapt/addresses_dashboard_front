@@ -16,7 +16,8 @@ export const useProviderRankings = () => {
     period: 'all_time',
     sort_by: 'total_requests',
     page: 1,
-    per_page: 15
+    per_page: 15,
+    aggregate_by_provider: false
   });
   const loading = ref(false);
   const error = ref<string | null>(null);
@@ -135,7 +136,8 @@ export const useProviderRankings = () => {
       period: 'all_time',
       sort_by: 'total_requests',
       page: 1,
-      per_page: 15
+      per_page: 15,
+      aggregate_by_provider: false
     };
   };
 
