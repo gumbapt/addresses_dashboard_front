@@ -610,3 +610,74 @@ export interface GlobalStats {
   global_total_requests: number;
   percentage_of_global: number;
 }
+
+// Provider Ranking by State Types
+// Base interface with common fields
+export interface ProviderRankingByStateBase {
+  rank: number;
+  provider_id: number;
+  provider_name: string;
+  state_id: number;
+  state_code: string;
+  state_name: string;
+  total_requests: number;
+  avg_success_rate: number;
+  avg_speed: number;
+  total_reports: number;
+  period_start: string;
+  period_end: string;
+  days_covered: number;
+}
+
+// When aggregate_by_provider=false (default - ranking by domain+provider)
+export interface ProviderRankingByStateByDomain extends ProviderRankingByStateBase {
+  domain_id: number;
+  domain_name: string;
+  domain_slug: string;
+  domain_total_requests: number;
+  percentage_of_domain: number;
+  technology?: string | null;
+}
+
+// When aggregate_by_provider=true (ranking by provider only, aggregated)
+export interface ProviderRankingByStateByProvider extends ProviderRankingByStateBase {
+  domains: string; // Format: "id:nome, id:nome"
+  domains_count: number;
+  provider_total_requests: number;
+  percentage_of_state: number;
+}
+
+// Union type for ranking items
+export type ProviderRankingByState = ProviderRankingByStateByDomain | ProviderRankingByStateByProvider;
+
+export interface ProviderRankingByStateFilters {
+  state_id: number;
+  provider_id?: number | null;
+  period?: 'today' | 'yesterday' | 'last_week' | 'last_month' | 'last_year' | 'all_time' | null;
+  date_from?: string | null;
+  date_to?: string | null;
+  sort_by?: 'total_requests' | 'success_rate' | 'avg_speed' | 'total_reports';
+  aggregate_by_provider?: boolean;
+}
+
+export interface ProviderRankingByStateResponse {
+  success: boolean;
+  data: {
+    ranking: ProviderRankingByState[];
+    total_entries: number;
+    filters: ProviderRankingByStateFilters;
+  };
+  note?: string;
+  message?: string;
+}
+
+// State interface
+export interface State {
+  id: number;
+  name: string;
+  code: string;
+  timezone?: string;
+  latitude?: number;
+  longitude?: number;
+  is_active?: boolean;
+}

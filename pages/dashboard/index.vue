@@ -28,6 +28,19 @@ const {
   topCards
 } = useDomainDashboard();
 const { formattedReports, loading: reportsLoading, loadReports } = useReports();
+const { 
+  ranking: stateRanking, 
+  formattedRanking: formattedStateRanking,
+  loading: stateRankingLoading, 
+  error: stateRankingError,
+  totalEntries: stateRankingTotalEntries,
+  filters: stateRankingFilters,
+  isAggregatedByProvider: isStateRankingAggregated,
+  loadRankingByState, 
+  updateFilters: updateStateRankingFilters,
+  clearFilters: clearStateRankingFilters 
+} = useProviderRankingByState();
+const { states: allStates, loading: statesLoading, error: statesError, fetchStates } = useStates();
 
 // States
 const currentTab = ref('ranking');
@@ -37,6 +50,7 @@ const dateTo = ref<string>('');
 const selectedDomainId = ref<number | null>(null);
 const selectedReportId = ref<number | string>('all');
 const showAllReports = ref(false);
+const selectedStateId = ref<number | null>(null);
 
 // Sort options
 const sortOptions = [
@@ -164,6 +178,62 @@ const formatDecimal = (num: number): string => {
   return num.toFixed(2);
 };
 
+// State options for select (from API)
+const stateOptions = computed(() => {
+  if (!allStates.value || !Array.isArray(allStates.value)) return [];
+  return allStates.value.map(state => ({
+    value: state.id,
+    title: `${state.name} (${state.code})`
+  }));
+});
+
+// Get state name by ID
+const getStateNameById = (stateId: number | null): string => {
+  if (!stateId || !allStates.value || !Array.isArray(allStates.value)) return '';
+  const state = allStates.value.find(s => s.id === stateId);
+  return state ? `${state.name} (${state.code})` : '';
+};
+
+// Load states when State Ranking tab is accessed
+watch(currentTab, async (newTab) => {
+  if (newTab === 'state-ranking' && allStates.value.length === 0 && !statesLoading.value) {
+    await fetchStates();
+  }
+});
+
+// Watch for state selection changes
+watch(selectedStateId, async (newStateId) => {
+  if (newStateId) {
+    updateStateRankingFilters({ state_id: newStateId });
+    await loadRankingByState();
+  }
+});
+
+// Watch for filter changes
+watch(() => stateRankingFilters.value.period, async () => {
+  if (selectedStateId.value) {
+    await loadRankingByState();
+  }
+});
+
+watch(() => stateRankingFilters.value.sort_by, async () => {
+  if (selectedStateId.value) {
+    await loadRankingByState();
+  }
+});
+
+watch(() => stateRankingFilters.value.provider_id, async () => {
+  if (selectedStateId.value) {
+    await loadRankingByState();
+  }
+});
+
+watch(() => stateRankingFilters.value.aggregate_by_provider, async () => {
+  if (selectedStateId.value) {
+    await loadRankingByState();
+  }
+});
+
 // Medal color by position
 const getMedalColor = (rank: number): string => {
   if (rank === 1) return 'warning'; // Gold
@@ -218,6 +288,10 @@ const getTechColor = (technology: string | null) => {
           <v-tab value="domain-dashboard">
             <v-icon class="mr-2">mdi-chart-box</v-icon>
             Domain Dashboard
+          </v-tab>
+          <v-tab value="state-ranking">
+            <v-icon class="mr-2">mdi-map-marker</v-icon>
+            State Ranking
           </v-tab>
           <v-tab value="comparison">
             <v-icon class="mr-2">mdi-compare</v-icon>
@@ -1180,6 +1254,285 @@ const getTechColor = (technology: string | null) => {
           </v-col>
         </v-row>
       </div>
+    </div>
+
+    <!-- TAB: State Ranking -->
+    <div v-if="currentTab === 'state-ranking'">
+      <!-- Filters -->
+      <v-row class="mb-4">
+        <v-col cols="12">
+          <UiParentCard title="State Ranking Filters">
+            <v-row>
+              <v-col cols="12" md="4">
+                <v-select
+                  v-model="selectedStateId"
+                  :items="stateOptions"
+                  label="Select State"
+                  variant="outlined"
+                  prepend-inner-icon="mdi-map-marker"
+                  hint="Select a state to view provider rankings"
+                  persistent-hint
+                  clearable
+                  :loading="statesLoading"
+                  :disabled="statesLoading"
+                >
+                  <template v-slot:item="{ props, item }">
+                    <v-list-item v-bind="props">
+                      <template v-slot:prepend>
+                        <v-icon color="primary">mdi-map-marker</v-icon>
+                      </template>
+                      <v-list-item-title>{{ item.raw.title }}</v-list-item-title>
+                    </v-list-item>
+                  </template>
+                </v-select>
+                <v-alert
+                  v-if="statesError"
+                  type="error"
+                  variant="tonal"
+                  density="compact"
+                  class="mt-2"
+                >
+                  {{ statesError }}
+                </v-alert>
+              </v-col>
+              <v-col cols="12" md="3" v-if="selectedStateId">
+                <v-select
+                  v-model="stateRankingFilters.period"
+                  :items="[
+                    { value: 'today', title: 'Today' },
+                    { value: 'yesterday', title: 'Yesterday' },
+                    { value: 'last_week', title: 'Last Week' },
+                    { value: 'last_month', title: 'Last Month' },
+                    { value: 'last_year', title: 'Last Year' },
+                    { value: 'all_time', title: 'All Time' }
+                  ]"
+                  label="Period"
+                  variant="outlined"
+                  prepend-inner-icon="mdi-calendar"
+                />
+              </v-col>
+              <v-col cols="12" md="2" v-if="selectedStateId">
+                <v-select
+                  v-model="stateRankingFilters.sort_by"
+                  :items="[
+                    { value: 'total_requests', title: 'Total Requests' },
+                    { value: 'success_rate', title: 'Success Rate' },
+                    { value: 'avg_speed', title: 'Avg Speed' },
+                    { value: 'total_reports', title: 'Total Reports' }
+                  ]"
+                  label="Sort By"
+                  variant="outlined"
+                  prepend-inner-icon="mdi-sort"
+                  density="compact"
+                />
+              </v-col>
+              <v-col cols="12" md="2" v-if="selectedStateId">
+                <v-switch
+                  v-model="stateRankingFilters.aggregate_by_provider"
+                  label="Aggregate by Provider"
+                  color="primary"
+                  density="compact"
+                  hide-details
+                >
+                  <template v-slot:prepend>
+                    <v-tooltip text="When enabled, combines all domains for a provider into one entry.">
+                      <template v-slot:activator="{ props }">
+                        <v-icon v-bind="props" size="small">mdi-information-outline</v-icon>
+                      </template>
+                    </v-tooltip>
+                  </template>
+                </v-switch>
+              </v-col>
+              <v-col cols="12" md="2" v-if="selectedStateId">
+                <v-btn
+                  color="primary"
+                  variant="outlined"
+                  block
+                  @click="clearStateRankingFilters(); loadRankingByState()"
+                >
+                  Clear Filters
+                </v-btn>
+              </v-col>
+            </v-row>
+          </UiParentCard>
+        </v-col>
+      </v-row>
+
+      <!-- Empty State -->
+      <v-row v-if="!selectedStateId">
+        <v-col cols="12">
+          <UiParentCard>
+            <div class="text-center py-12">
+              <v-icon size="80" color="grey">mdi-map-marker-outline</v-icon>
+              <h3 class="text-h5 mt-4 mb-2">Select a State</h3>
+              <p class="text-medium-emphasis">
+                Choose a state from the dropdown above to view provider rankings for that state
+              </p>
+            </div>
+          </UiParentCard>
+        </v-col>
+      </v-row>
+
+      <!-- Loading -->
+      <v-row v-else-if="stateRankingLoading">
+        <v-col cols="12">
+          <UiParentCard>
+            <div class="d-flex justify-center align-center py-8">
+              <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
+            </div>
+          </UiParentCard>
+        </v-col>
+      </v-row>
+
+      <!-- Error -->
+      <v-row v-else-if="stateRankingError">
+        <v-col cols="12">
+          <UiParentCard>
+            <v-alert type="error" variant="tonal" class="mb-0">
+              {{ stateRankingError }}
+            </v-alert>
+          </UiParentCard>
+        </v-col>
+      </v-row>
+
+      <!-- Ranking Table -->
+      <v-row v-else-if="selectedStateId && formattedStateRanking.length > 0">
+        <v-col cols="12">
+          <UiParentCard :title="`Provider Rankings - ${getStateNameById(selectedStateId)}`">
+            <v-alert
+              type="info"
+              variant="tonal"
+              class="mb-4"
+              density="compact"
+            >
+              <v-icon start>mdi-information</v-icon>
+              Showing {{ stateRankingTotalEntries }} {{ isStateRankingAggregated ? 'provider' : 'domain-provider' }} ranking(s) for {{ getStateNameById(selectedStateId) }}
+              <span v-if="isStateRankingAggregated" class="ml-2">
+                <v-chip size="x-small" color="primary" variant="tonal">Aggregated by Provider</v-chip>
+              </span>
+            </v-alert>
+
+            <v-table>
+              <thead>
+                <tr>
+                  <th class="text-left">Rank</th>
+                  <th class="text-left" v-if="!isStateRankingAggregated">Domain</th>
+                  <th class="text-left">Provider</th>
+                  <th class="text-right">Total Requests</th>
+                  <th class="text-right" v-if="!isStateRankingAggregated">% of Domain</th>
+                  <th class="text-right" v-if="isStateRankingAggregated">% of State</th>
+                  <th class="text-right" v-if="isStateRankingAggregated">Domains</th>
+                  <th class="text-right">Success Rate</th>
+                  <th class="text-right">Avg Speed</th>
+                  <th class="text-center">Reports</th>
+                  <th class="text-center">Period</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(item, index) in formattedStateRanking" :key="isStateRankingAggregated ? `provider-${item.provider_id}` : `domain-${('domain_id' in item) ? item.domain_id : index}-provider-${item.provider_id}`">
+                  <td>
+                    <v-chip
+                      :color="item.rank <= 3 ? 'primary' : 'default'"
+                      variant="flat"
+                      size="small"
+                    >
+                      <v-icon v-if="item.rank === 1" size="small" class="mr-1">mdi-trophy</v-icon>
+                      <v-icon v-else-if="item.rank === 2" size="small" class="mr-1">mdi-medal</v-icon>
+                      <v-icon v-else-if="item.rank === 3" size="small" class="mr-1">mdi-medal-outline</v-icon>
+                      {{ item.rank }}
+                    </v-chip>
+                  </td>
+                  <!-- Domain column (only when NOT aggregated) -->
+                  <td v-if="!isStateRankingAggregated && 'domain_name' in item">
+                    <div class="font-weight-medium">{{ item.domain_name }}</div>
+                    <div class="text-caption text-medium-emphasis">{{ item.domain_slug }}</div>
+                  </td>
+                  <!-- Provider column -->
+                  <td>
+                    <div class="font-weight-medium">{{ item.provider_name }}</div>
+                    <v-chip
+                      v-if="'technology' in item && item.technology"
+                      size="x-small"
+                      variant="outlined"
+                      class="mt-1"
+                    >
+                      {{ item.technology }}
+                    </v-chip>
+                  </td>
+                  <!-- Total Requests -->
+                  <td class="text-right font-weight-medium">
+                    {{ item.formattedRequests }}
+                  </td>
+                  <!-- Percentage column (different based on aggregation) -->
+                  <td class="text-right" v-if="!isStateRankingAggregated && 'formattedPercentage' in item">
+                    <v-chip color="primary" variant="tonal" size="small">
+                      {{ item.formattedPercentage }}
+                    </v-chip>
+                  </td>
+                  <td class="text-right" v-if="isStateRankingAggregated && 'formattedPercentage' in item">
+                    <v-chip color="primary" variant="tonal" size="small">
+                      {{ item.formattedPercentage }}
+                    </v-chip>
+                  </td>
+                  <!-- Domains column (only when aggregated) -->
+                  <td class="text-right" v-if="isStateRankingAggregated && 'formattedDomains' in item">
+                    <v-tooltip :text="item.formattedDomains || ''">
+                      <template v-slot:activator="{ props }">
+                        <v-chip
+                          v-bind="props"
+                          color="info"
+                          variant="tonal"
+                          size="small"
+                        >
+                          {{ ('domainsCount' in item ? item.domainsCount : 0) }} domain(s)
+                        </v-chip>
+                      </template>
+                    </v-tooltip>
+                  </td>
+                  <!-- Success Rate -->
+                  <td class="text-right">
+                    <v-chip
+                      :color="item.avg_success_rate >= 90 ? 'success' : item.avg_success_rate >= 70 ? 'warning' : 'error'"
+                      variant="tonal"
+                      size="small"
+                    >
+                      {{ item.formattedSuccessRate }}
+                    </v-chip>
+                  </td>
+                  <!-- Avg Speed -->
+                  <td class="text-right">{{ item.formattedSpeed }}</td>
+                  <!-- Reports -->
+                  <td class="text-center">
+                    <v-chip size="small" variant="outlined">
+                      {{ item.total_reports }}
+                    </v-chip>
+                  </td>
+                  <!-- Period -->
+                  <td class="text-center">
+                    <div class="text-caption">{{ item.period_start }} to {{ item.period_end }}</div>
+                    <div class="text-caption text-medium-emphasis">{{ item.days_covered }} days</div>
+                  </td>
+                </tr>
+              </tbody>
+            </v-table>
+          </UiParentCard>
+        </v-col>
+      </v-row>
+
+      <!-- No Data -->
+      <v-row v-else-if="selectedStateId && formattedStateRanking.length === 0">
+        <v-col cols="12">
+          <UiParentCard>
+            <div class="text-center py-12">
+              <v-icon size="64" color="grey">mdi-database-off</v-icon>
+              <h3 class="text-h6 mt-4 mb-2">No Data Available</h3>
+              <p class="text-medium-emphasis">
+                No provider rankings found for {{ getStateNameById(selectedStateId) }} with the selected filters.
+              </p>
+            </div>
+          </UiParentCard>
+        </v-col>
+      </v-row>
     </div>
 
     <!-- TAB: Comparison -->
