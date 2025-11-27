@@ -636,6 +636,8 @@ export interface ProviderRankingByStateByDomain extends ProviderRankingByStateBa
   domain_slug: string;
   domain_total_requests: number;
   percentage_of_domain: number;
+  provider_total_requests: number;
+  percentage_of_provider_in_state: number;
   technology?: string | null;
 }
 

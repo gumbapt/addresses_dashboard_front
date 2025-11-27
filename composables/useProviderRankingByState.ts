@@ -102,7 +102,9 @@ export const useProviderRankingByState = () => {
         const domainItem = item as any;
         return {
           ...base,
-          formattedPercentage: `${domainItem.percentage_of_domain.toFixed(2)}%`
+          formattedPercentage: `${domainItem.percentage_of_domain.toFixed(2)}%`,
+          formattedProviderTotalRequests: domainItem.provider_total_requests?.toLocaleString() || '0',
+          formattedPercentageOfProvider: domainItem.percentage_of_provider_in_state ? `${domainItem.percentage_of_provider_in_state.toFixed(2)}%` : '0%'
         };
       }
 

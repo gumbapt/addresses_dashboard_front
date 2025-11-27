@@ -1420,6 +1420,11 @@ const getTechColor = (technology: string | null) => {
                   <th class="text-left">Provider</th>
                   <th class="text-right">Total Requests</th>
                   <th class="text-right" v-if="!isStateRankingAggregated">% of Domain</th>
+                  <th class="text-right" v-if="!isStateRankingAggregated">Provider Total</th>
+                  <th class="text-right" v-if="!isStateRankingAggregated">
+                    <div>% of Provider</div>
+                    <div class="text-caption text-medium-emphasis">(row/provider)</div>
+                  </th>
                   <th class="text-right" v-if="isStateRankingAggregated">% of State</th>
                   <th class="text-right" v-if="isStateRankingAggregated">Domains</th>
                   <th class="text-right">Success Rate</th>
@@ -1463,12 +1468,29 @@ const getTechColor = (technology: string | null) => {
                   <td class="text-right font-weight-medium">
                     {{ item.formattedRequests }}
                   </td>
-                  <!-- Percentage column (different based on aggregation) -->
+                  <!-- Percentage of Domain column (only when NOT aggregated) -->
                   <td class="text-right" v-if="!isStateRankingAggregated && 'formattedPercentage' in item">
                     <v-chip color="primary" variant="tonal" size="small">
                       {{ item.formattedPercentage }}
                     </v-chip>
                   </td>
+                  <!-- Provider Total Requests column (only when NOT aggregated) -->
+                  <td class="text-right" v-if="!isStateRankingAggregated && 'formattedProviderTotalRequests' in item">
+                    <div class="font-weight-medium">{{ item.formattedProviderTotalRequests }}</div>
+                    <div class="text-caption text-medium-emphasis">All domains</div>
+                  </td>
+                  <!-- Percentage of Provider in State column (only when NOT aggregated) -->
+                  <td class="text-right" v-if="!isStateRankingAggregated && 'formattedPercentageOfProvider' in item">
+                    <v-tooltip text="Percentage that this domain+provider row represents of the provider's total in this state">
+                      <template v-slot:activator="{ props }">
+                        <v-chip v-bind="props" color="info" variant="tonal" size="small">
+                          {{ item.formattedPercentageOfProvider }}
+                        </v-chip>
+                      </template>
+                    </v-tooltip>
+                    <div class="text-caption text-medium-emphasis mt-1">of provider</div>
+                  </td>
+                  <!-- Percentage of State column (only when aggregated) -->
                   <td class="text-right" v-if="isStateRankingAggregated && 'formattedPercentage' in item">
                     <v-chip color="primary" variant="tonal" size="small">
                       {{ item.formattedPercentage }}
