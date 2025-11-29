@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import UiParentCard from '@/components/shared/UiParentCard.vue';
 import UiChildCard from '@/components/shared/UiChildCard.vue';
 import ProviderRankingTable from '@/components/ProviderRankingTable.vue';
+
+const route = useRoute();
 
 // Define middleware
 definePageMeta({
@@ -74,6 +77,14 @@ onMounted(() => {
   loadRanking('score');
   loadDomains();
   loadProviderRankings(); // Load provider rankings
+  
+  // Initialize date filters from URL for state ranking
+  if (route.query.state_date_from) {
+    updateStateRankingFilters({ date_from: route.query.state_date_from as string });
+  }
+  if (route.query.state_date_to) {
+    updateStateRankingFilters({ date_to: route.query.state_date_to as string });
+  }
 });
 
 // Function to change sorting
@@ -209,6 +220,7 @@ watch(selectedStateId, async (newStateId) => {
   }
 });
 
+
 // Watch for filter changes
 watch(() => stateRankingFilters.value.period, async () => {
   if (selectedStateId.value) {
@@ -233,6 +245,63 @@ watch(() => stateRankingFilters.value.aggregate_by_provider, async () => {
     await loadRankingByState();
   }
 });
+
+// Watch for date filter changes
+watch(() => stateRankingFilters.value.date_from, async () => {
+  if (selectedStateId.value) {
+    // Clear period when custom dates are selected
+    if (stateRankingFilters.value.date_from || stateRankingFilters.value.date_to) {
+      updateStateRankingFilters({ period: null });
+    }
+    updateStateRankingURL();
+    await loadRankingByState();
+  }
+});
+
+watch(() => stateRankingFilters.value.date_to, async () => {
+  if (selectedStateId.value) {
+    // Clear period when custom dates are selected
+    if (stateRankingFilters.value.date_from || stateRankingFilters.value.date_to) {
+      updateStateRankingFilters({ period: null });
+    }
+    updateStateRankingURL();
+    await loadRankingByState();
+  }
+});
+
+// Update URL query parameters for state ranking
+const updateStateRankingURL = () => {
+  const query: Record<string, any> = { ...route.query };
+  
+  if (stateRankingFilters.value.date_from) {
+    query.state_date_from = stateRankingFilters.value.date_from;
+  } else {
+    delete query.state_date_from;
+  }
+  
+  if (stateRankingFilters.value.date_to) {
+    query.state_date_to = stateRankingFilters.value.date_to;
+  } else {
+    delete query.state_date_to;
+  }
+  
+  navigateTo({ query }, { replace: true });
+};
+
+// Helper function to format date for display
+const formatStateDate = (dateString: string | null): string => {
+  if (!dateString) return '';
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pt-BR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+  } catch (e) {
+    return dateString;
+  }
+};
 
 // Medal color by position
 const getMedalColor = (rank: number): string => {
@@ -1348,10 +1417,69 @@ const getTechColor = (technology: string | null) => {
                   color="primary"
                   variant="outlined"
                   block
-                  @click="clearStateRankingFilters(); loadRankingByState()"
+                  @click="clearStateRankingFilters(); updateStateRankingURL(); loadRankingByState()"
                 >
                   Clear Filters
                 </v-btn>
+              </v-col>
+            </v-row>
+            
+            <!-- Date Range Filters -->
+            <v-row v-if="selectedStateId" class="mt-2">
+              <v-col cols="12">
+                <v-card variant="outlined" class="pa-3">
+                  <div class="text-caption text-medium-emphasis mb-2">
+                    <v-icon size="small" class="mr-1">mdi-calendar-range</v-icon>
+                    Custom Date Range (Optional)
+                  </div>
+                  <v-row>
+                    <v-col cols="12" sm="6" md="4">
+                      <v-text-field
+                        v-model="stateRankingFilters.date_from"
+                        label="Data de Início"
+                        type="date"
+                        variant="outlined"
+                        density="compact"
+                        clearable
+                        prepend-inner-icon="mdi-calendar-start"
+                      />
+                    </v-col>
+
+                    <v-col cols="12" sm="6" md="4">
+                      <v-text-field
+                        v-model="stateRankingFilters.date_to"
+                        label="Data de Fim"
+                        type="date"
+                        variant="outlined"
+                        density="compact"
+                        clearable
+                        prepend-inner-icon="mdi-calendar-end"
+                      />
+                    </v-col>
+                    <v-col cols="12" md="4" class="d-flex align-center">
+                      <v-alert
+                        v-if="stateRankingFilters.date_from || stateRankingFilters.date_to"
+                        type="info"
+                        variant="tonal"
+                        density="compact"
+                        class="mb-0"
+                      >
+                        <div class="text-caption">
+                          <v-icon size="small" class="mr-1">mdi-information</v-icon>
+                          <span v-if="stateRankingFilters.date_from && stateRankingFilters.date_to">
+                            Período: {{ formatStateDate(stateRankingFilters.date_from) }} até {{ formatStateDate(stateRankingFilters.date_to) }}
+                          </span>
+                          <span v-else-if="stateRankingFilters.date_from">
+                            A partir de: {{ formatStateDate(stateRankingFilters.date_from) }}
+                          </span>
+                          <span v-else-if="stateRankingFilters.date_to">
+                            Até: {{ formatStateDate(stateRankingFilters.date_to) }}
+                          </span>
+                        </div>
+                      </v-alert>
+                    </v-col>
+                  </v-row>
+                </v-card>
               </v-col>
             </v-row>
           </UiParentCard>

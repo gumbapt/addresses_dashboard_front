@@ -107,6 +107,67 @@
       </v-col>
     </v-row>
 
+    <!-- Filters Row 2: Date Range -->
+    <v-row class="mb-4">
+      <v-col cols="12">
+        <v-card variant="outlined" class="pa-3">
+          <div class="text-caption text-medium-emphasis mb-2">
+            <v-icon size="small" class="mr-1">mdi-calendar-range</v-icon>
+            Custom Date Range (Optional)
+          </div>
+          <v-row>
+            <v-col cols="12" sm="6" md="4">
+              <v-text-field
+                v-model="localFilters.date_from"
+                label="Data de Início"
+                type="date"
+                variant="outlined"
+                density="compact"
+                clearable
+                prepend-inner-icon="mdi-calendar-start"
+                @update:model-value="onDateChange"
+              />
+            </v-col>
+
+            <v-col cols="12" sm="6" md="4">
+              <v-text-field
+                v-model="localFilters.date_to"
+                label="Data de Fim"
+                type="date"
+                variant="outlined"
+                density="compact"
+                clearable
+                prepend-inner-icon="mdi-calendar-end"
+                @update:model-value="onDateChange"
+              />
+            </v-col>
+            <v-col cols="12" md="4" class="d-flex align-center">
+              <v-alert
+                v-if="localFilters.date_from || localFilters.date_to"
+                type="info"
+                variant="tonal"
+                density="compact"
+                class="mb-0"
+              >
+                <div class="text-caption">
+                  <v-icon size="small" class="mr-1">mdi-information</v-icon>
+                  <span v-if="localFilters.date_from && localFilters.date_to">
+                    Período: {{ formatDate(localFilters.date_from) }} até {{ formatDate(localFilters.date_to) }}
+                  </span>
+                  <span v-else-if="localFilters.date_from">
+                    A partir de: {{ formatDate(localFilters.date_from) }}
+                  </span>
+                  <span v-else-if="localFilters.date_to">
+                    Até: {{ formatDate(localFilters.date_to) }}
+                  </span>
+                </div>
+              </v-alert>
+            </v-col>
+          </v-row>
+        </v-card>
+      </v-col>
+    </v-row>
+
     <!-- Global Stats Badge (when provider is selected) -->
     <v-row v-if="globalStats" class="mb-4">
       <v-col cols="12">
@@ -356,8 +417,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
+import { useRoute } from 'vue-router';
 import type { ProviderRankingFilters } from '~/types/api';
+
+const route = useRoute();
 
 const {
   formattedRankings,
@@ -378,8 +442,12 @@ const {
   changeLocalSort
 } = useProviderRankings();
 
-// Local filters for UI
-const localFilters = ref<ProviderRankingFilters>({ ...filters.value });
+// Local filters for UI - initialize from URL query params
+const localFilters = ref<ProviderRankingFilters>({ 
+  ...filters.value,
+  date_from: (route.query.date_from as string) || null,
+  date_to: (route.query.date_to as string) || null
+});
 
 // Provider options - dynamically populated from availableProviders
 const providerOptions = computed(() => {
@@ -430,11 +498,36 @@ const getSelectedProviderName = () => {
   return provider ? provider.name : '';
 };
 
+// Update URL query parameters
+const updateURL = () => {
+  const query: Record<string, string> = {};
+  
+  if (localFilters.value.date_from) {
+    query.date_from = localFilters.value.date_from;
+  }
+  if (localFilters.value.date_to) {
+    query.date_to = localFilters.value.date_to;
+  }
+  
+  navigateTo({
+    query: Object.keys(query).length > 0 ? query : {}
+  }, { replace: true });
+};
+
 const onFilterChange = () => {
   // Reset to page 1 when filters change
   localFilters.value.page = 1;
   updateFilters(localFilters.value);
+  updateURL();
   loadProviderRankings();
+};
+
+const onDateChange = () => {
+  // When dates change, clear period to avoid conflicts
+  if (localFilters.value.date_from || localFilters.value.date_to) {
+    localFilters.value.period = null;
+  }
+  onFilterChange();
 };
 
 const onSortChange = (newSort: string) => {
@@ -445,7 +538,10 @@ const onClearFilters = () => {
   clearFilters();
   localFilters.value = { ...filters.value };
   localFilters.value.aggregate_by_provider = false; // Reset aggregate toggle
+  localFilters.value.date_from = null;
+  localFilters.value.date_to = null;
   changeLocalSort('total_requests'); // Reset sort to default
+  updateURL();
   loadProviderRankings();
 };
 
@@ -489,7 +585,37 @@ const getTechColor = (technology: string) => {
   return techMap[technology] || 'grey';
 };
 
+// Helper function to format date for display
+const formatDate = (dateString: string | null): string => {
+  if (!dateString) return '';
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pt-BR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+  } catch (e) {
+    return dateString;
+  }
+};
+
+// Watch for URL query parameter changes
+watch(() => route.query, (newQuery) => {
+  if (newQuery.date_from !== localFilters.value.date_from || 
+      newQuery.date_to !== localFilters.value.date_to) {
+    localFilters.value.date_from = (newQuery.date_from as string) || null;
+    localFilters.value.date_to = (newQuery.date_to as string) || null;
+    updateFilters(localFilters.value);
+    loadProviderRankings();
+  }
+}, { immediate: false });
+
 onMounted(() => {
+  // Initialize filters from URL if present
+  if (localFilters.value.date_from || localFilters.value.date_to) {
+    updateFilters(localFilters.value);
+  }
   loadProviderRankings();
 });
 </script>

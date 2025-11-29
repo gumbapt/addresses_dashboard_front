@@ -134,6 +134,8 @@ export const useProviderRankings = () => {
       technology: null,
       provider_id: null,
       period: 'all_time',
+      date_from: null,
+      date_to: null,
       sort_by: 'total_requests',
       page: 1,
       per_page: 15,
