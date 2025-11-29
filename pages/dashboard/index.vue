@@ -97,6 +97,11 @@ const viewDomainDashboard = (domainId: number) => {
   navigateTo(`/domains/${domainId}/dashboard`);
 };
 
+// Function to navigate to domain state dashboard
+const viewDomainStateDashboard = (domainId: number, stateId: number) => {
+  navigateTo(`/domains/${domainId}/state/${stateId}/dashboard`);
+};
+
 // Domain info for selected domain
 const currentDomain = computed(() => {
   if (!selectedDomainId.value || !allDomains.value || !Array.isArray(allDomains.value)) return null;
@@ -1559,6 +1564,7 @@ const getTechColor = (technology: string | null) => {
                   <th class="text-right">Avg Speed</th>
                   <th class="text-center">Reports</th>
                   <th class="text-center">Period</th>
+                  <th class="text-center">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -1661,6 +1667,21 @@ const getTechColor = (technology: string | null) => {
                   <td class="text-center">
                     <div class="text-caption">{{ item.period_start }} to {{ item.period_end }}</div>
                     <div class="text-caption text-medium-emphasis">{{ item.days_covered }} days</div>
+                  </td>
+                  <!-- Actions -->
+                  <td class="text-center">
+                    <v-btn
+                      v-if="!isStateRankingAggregated && 'domain_id' in item"
+                      icon
+                      size="small"
+                      variant="text"
+                      color="primary"
+                      @click="viewDomainStateDashboard(item.domain_id, selectedStateId!)"
+                      title="View Domain State Dashboard"
+                    >
+                      <v-icon>mdi-eye</v-icon>
+                    </v-btn>
+                    <span v-else class="text-medium-emphasis text-caption">-</span>
                   </td>
                 </tr>
               </tbody>
