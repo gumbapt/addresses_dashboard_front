@@ -32,6 +32,7 @@ const selectedPeriod = ref<'today' | 'yesterday' | 'last_week' | 'last_month' | 
 const dateFrom = ref<string>('');
 const dateTo = ref<string>('');
 const sortBy = ref<'total_count' | 'total_requests' | 'success_rate' | 'avg_speed'>('total_count');
+const citiesLimit = ref<number>(10);
 
 // Domain info
 const currentDomain = computed(() => {
@@ -53,14 +54,15 @@ onMounted(async () => {
 });
 
 // Watch for filter changes
-watch([selectedPeriod, dateFrom, dateTo, sortBy], () => {
+watch([selectedPeriod, dateFrom, dateTo, sortBy, citiesLimit], () => {
   loadStats();
 });
 
 const loadStats = async () => {
   const filters: any = {
     state_id: stateId.value,
-    sort_by: sortBy.value
+    sort_by: sortBy.value,
+    cities_limit: citiesLimit.value
   };
   
   // Se período customizado, usar apenas date_from e date_to (sem period)
@@ -74,6 +76,30 @@ const loadStats = async () => {
   
   await fetchStats(domainId.value, filters);
 };
+
+// Color palette for charts - varied and distinct colors
+const chartColors = [
+  '#3B82F6', // Blue
+  '#10B981', // Green
+  '#F59E0B', // Amber
+  '#EF4444', // Red
+  '#8B5CF6', // Purple
+  '#EC4899', // Pink
+  '#06B6D4', // Cyan
+  '#84CC16', // Lime
+  '#F97316', // Orange
+  '#6366F1', // Indigo
+  '#14B8A6', // Teal
+  '#A855F7', // Violet
+  '#22C55E', // Emerald
+  '#F43F5E', // Rose
+  '#0EA5E9', // Sky
+  '#64748B', // Slate
+  '#D946EF', // Fuchsia
+  '#FBBF24', // Yellow
+  '#34D399', // Light Green
+  '#60A5FA'  // Light Blue
+];
 
 // Chart configurations
 const providerChartOptions = computed(() => ({
@@ -91,6 +117,7 @@ const providerChartOptions = computed(() => ({
     }
   },
   labels: providerChartData.value.labels,
+  colors: chartColors,
   responsive: [{
     breakpoint: 480,
     options: {
@@ -180,7 +207,7 @@ const topCitiesChartOptions = computed(() => {
     },
     colors: topCitiesChartData.value.colors.length > 0 
       ? topCitiesChartData.value.colors 
-      : ['#3B82F6', '#2563EB', '#1D4ED8', '#1E40AF', '#1E3A8A', '#172554'],
+      : chartColors,
     grid: {
       show: true,
       borderColor: '#f0f0f0',
@@ -231,6 +258,7 @@ const technologyChartOptions = computed(() => ({
     }
   },
   labels: technologyChartData.value.labels,
+  colors: chartColors,
   responsive: [{
     breakpoint: 480,
     options: {
@@ -417,6 +445,24 @@ const goBack = () => {
                 variant="outlined"
                 density="compact"
                 prepend-inner-icon="mdi-sort"
+              />
+            </v-col>
+            <v-col cols="12" md="2">
+              <v-select
+                v-model.number="citiesLimit"
+                :items="[
+                  { value: 5, title: 'Top 5' },
+                  { value: 10, title: 'Top 10' },
+                  { value: 20, title: 'Top 20' },
+                  { value: 50, title: 'Top 50' },
+                  { value: 100, title: 'Top 100' }
+                ]"
+                item-value="value"
+                item-title="title"
+                label="Cities Limit"
+                variant="outlined"
+                density="compact"
+                prepend-inner-icon="mdi-city"
               />
             </v-col>
           </v-row>
@@ -817,7 +863,9 @@ const goBack = () => {
                                   maxWidth: 120
                                 }
                               },
-                              colors: cityData.providers_chart.datasets[0]?.backgroundColor || ['#3B82F6'],
+                              colors: cityData.providers_chart.datasets[0]?.backgroundColor && cityData.providers_chart.datasets[0].backgroundColor.length > 0
+                                ? cityData.providers_chart.datasets[0].backgroundColor
+                                : chartColors,
                               grid: {
                                 show: true,
                                 borderColor: '#f0f0f0',
@@ -901,7 +949,9 @@ const goBack = () => {
                                   maxWidth: 120
                                 }
                               },
-                              colors: cityData.technologies_chart.datasets[0]?.backgroundColor || ['#10B981'],
+                              colors: cityData.technologies_chart.datasets[0]?.backgroundColor && cityData.technologies_chart.datasets[0].backgroundColor.length > 0
+                                ? cityData.technologies_chart.datasets[0].backgroundColor
+                                : chartColors,
                               grid: {
                                 show: true,
                                 borderColor: '#f0f0f0',

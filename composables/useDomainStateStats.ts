@@ -7,6 +7,7 @@ export interface DomainStateStatsFilters {
   date_from?: string | null;
   date_to?: string | null;
   sort_by?: 'total_count' | 'total_requests' | 'success_rate' | 'avg_speed';
+  cities_limit?: number | null;
 }
 
 export interface DomainStateStats {
@@ -164,6 +165,9 @@ export const useDomainStateStats = () => {
       }
       if (filters.sort_by) {
         queryParams.append('sort_by', filters.sort_by);
+      }
+      if (filters.cities_limit) {
+        queryParams.append('cities_limit', filters.cities_limit.toString());
       }
       
       const url = `/reports/domain/${domainId}/state-stats?${queryParams.toString()}`;
