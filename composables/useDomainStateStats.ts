@@ -67,6 +67,46 @@ export interface DomainStateStats {
       report_count: number;
     }>;
   };
+  cities_detailed_charts?: Array<{
+    city_id: number;
+    city_name: string;
+    total_requests: number;
+    providers_chart: {
+      labels: string[];
+      datasets: Array<{
+        label: string;
+        data: number[];
+        backgroundColor: string[];
+        borderColor: string[];
+        borderWidth: number;
+      }>;
+      percentages: number[];
+      total: number;
+      raw_data: Array<{
+        provider_id: number;
+        name: string;
+        total_count: number;
+        percentage: number;
+      }>;
+    };
+    technologies_chart: {
+      labels: string[];
+      datasets: Array<{
+        label: string;
+        data: number[];
+        backgroundColor: string[];
+        borderColor: string[];
+        borderWidth: number;
+      }>;
+      percentages: number[];
+      total: number;
+      raw_data: Array<{
+        technology: string;
+        total_count: number;
+        percentage: number;
+      }>;
+    };
+  }>;
   top_zip_codes: Array<{
     zip_code_id: number;
     code: string;

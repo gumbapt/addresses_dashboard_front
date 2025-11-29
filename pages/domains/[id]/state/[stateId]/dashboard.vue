@@ -124,94 +124,97 @@ const providerChartOptions = computed(() => ({
   }
 }));
 
-const topCitiesChartOptions = computed(() => ({
-  chart: {
-    type: 'bar',
-    fontFamily: 'inherit',
-    height: Math.max(400, (topCitiesChartData.value.categories.length || 5) * 50),
-    toolbar: { show: false }
-  },
-  title: {
-    text: 'Distribution of Requests by City',
-    align: 'left',
-    style: {
-      fontSize: '18px',
-      fontWeight: 600
-    }
-  },
-  plotOptions: {
-    bar: {
-      horizontal: true,
-      borderRadius: 4,
-      barHeight: '70%',
-      distributed: topCitiesChartData.value.colors.length > 0
-    }
-  },
-  dataLabels: {
-    enabled: true,
-    formatter: function(val: number, opts: any) {
-      const index = opts.dataPointIndex;
-      const percentage = topCitiesChartData.value.percentages[index];
-      if (percentage !== undefined) {
-        return `${val.toLocaleString()} (${percentage.toFixed(1)}%)`;
-      }
-      return val.toLocaleString();
+const topCitiesChartOptions = computed(() => {
+  const cityNames = topCitiesChartData.value.categories || [];
+  
+  return {
+    chart: {
+      type: 'bar',
+      fontFamily: 'inherit',
+      height: Math.max(400, (topCitiesChartData.value.categories.length || 5) * 50),
+      toolbar: { show: false }
     },
-    style: {
-      fontSize: '11px',
-      fontWeight: 600,
-      colors: ['#fff']
-    }
-  },
-  xaxis: {
-    title: {
-      text: 'Number of Requests'
-    },
-    labels: {
-      formatter: function(val: number) {
-        return val.toLocaleString();
+    plotOptions: {
+      bar: {
+        horizontal: true,
+        borderRadius: 4,
+        barHeight: '70%',
+        distributed: topCitiesChartData.value.colors.length > 0
       }
-    }
-  },
-  yaxis: {
-    categories: topCitiesChartData.value.categories,
-    labels: {
-      style: {
-        fontSize: '12px'
+    },
+    dataLabels: {
+      enabled: true,
+      formatter: function(val: number, opts: any) {
+        const index = opts.dataPointIndex;
+        const cityName = cityNames[index] || '';
+        const percentage = topCitiesChartData.value.percentages[index];
+        if (percentage !== undefined) {
+          return `${cityName}: ${val.toLocaleString()} (${percentage.toFixed(1)}%)`;
+        }
+        return `${cityName}: ${val.toLocaleString()}`;
       },
-      maxWidth: 150
-    }
-  },
-  colors: topCitiesChartData.value.colors.length > 0 
-    ? topCitiesChartData.value.colors 
-    : ['#3B82F6', '#2563EB', '#1D4ED8', '#1E40AF', '#1E3A8A', '#172554'],
-  grid: {
-    show: true,
-    borderColor: '#f0f0f0',
+      style: {
+        fontSize: '11px',
+        fontWeight: 600,
+        colors: ['#fff']
+      }
+    },
     xaxis: {
-      lines: {
-        show: true
+      title: {
+        text: 'Number of Requests'
+      },
+      labels: {
+        formatter: function(val: number) {
+          return val.toLocaleString();
+        }
       }
     },
     yaxis: {
-      lines: {
-        show: false
+      categories: cityNames,
+      labels: {
+        style: {
+          fontSize: '12px'
+        },
+        maxWidth: 150
       }
-    }
-  },
-  tooltip: {
-    y: {
-      formatter: function(val: number, opts: any) {
-        const index = opts.dataPointIndex;
-        const percentage = topCitiesChartData.value.percentages[index];
-        if (percentage !== undefined) {
-          return `${val.toLocaleString()} requisições (${percentage.toFixed(1)}%)`;
+    },
+    colors: topCitiesChartData.value.colors.length > 0 
+      ? topCitiesChartData.value.colors 
+      : ['#3B82F6', '#2563EB', '#1D4ED8', '#1E40AF', '#1E3A8A', '#172554'],
+    grid: {
+      show: true,
+      borderColor: '#f0f0f0',
+      xaxis: {
+        lines: {
+          show: true
         }
-        return `${val.toLocaleString()} requisições`;
+      },
+      yaxis: {
+        lines: {
+          show: false
+        }
+      }
+    },
+    tooltip: {
+      custom: function({ series, seriesIndex, dataPointIndex, w }: any) {
+        const cityName = cityNames[dataPointIndex] || 'Unknown';
+        const value = series[seriesIndex][dataPointIndex];
+        const percentage = topCitiesChartData.value.percentages[dataPointIndex];
+        
+        let html = `<div style="padding: 8px;">`;
+        html += `<div style="font-weight: 600; margin-bottom: 4px;">${cityName}</div>`;
+        html += `<div>${value.toLocaleString()} requisições`;
+        if (percentage !== undefined) {
+          html += ` (${percentage.toFixed(1)}%)`;
+        }
+        html += `</div>`;
+        html += `</div>`;
+        
+        return html;
       }
     }
-  }
-}));
+  };
+});
 
 const technologyChartOptions = computed(() => ({
   chart: {
@@ -560,23 +563,33 @@ const goBack = () => {
       </v-row>
 
       <!-- Cities Chart Row -->
-      <v-row class="mb-4" v-if="topCitiesChartData.data.length > 0">
+      <v-row class="mb-4" v-if="stats">
         <v-col cols="12">
           <UiParentCard title="Distribution of Requests by City">
-            <apexchart
-              type="bar"
-              :height="Math.max(400, (topCitiesChartData.categories.length || 5) * 50)"
-              :options="topCitiesChartOptions"
-              :series="[{ name: 'Requests', data: topCitiesChartData.data }]"
-            />
+            <div v-if="topCitiesChartData && topCitiesChartData.data && topCitiesChartData.data.length > 0 && topCitiesChartData.categories && topCitiesChartData.categories.length > 0">
+              <apexchart
+                type="bar"
+                :height="Math.max(400, (topCitiesChartData.categories.length || 5) * 50)"
+                :options="topCitiesChartOptions"
+                :series="[{ name: 'Requests', data: topCitiesChartData.data }]"
+              />
+            </div>
+            <div v-else-if="stats.top_cities && stats.top_cities.length > 0" class="text-center py-8">
+              <v-icon size="64" color="grey">mdi-chart-bar</v-icon>
+              <p class="text-h6 mt-4 text-medium-emphasis">City chart data not available, but cities are listed below</p>
+            </div>
+            <div v-else class="text-center py-8">
+              <v-icon size="64" color="grey">mdi-chart-bar</v-icon>
+              <p class="text-h6 mt-4 text-medium-emphasis">No city data available</p>
+            </div>
             
             <!-- Cities List Below Chart -->
-            <div class="mt-4">
+            <div class="mt-4" v-if="(topCitiesChartData.raw_data && topCitiesChartData.raw_data.length > 0) || (stats.top_cities && stats.top_cities.length > 0)">
               <v-divider class="mb-4"></v-divider>
               <div class="text-subtitle-2 text-medium-emphasis mb-3">City Rankings</div>
               <v-row>
                 <v-col 
-                  v-for="(city, index) in topCitiesChartData.raw_data" 
+                  v-for="(city, index) in (topCitiesChartData.raw_data && topCitiesChartData.raw_data.length > 0 ? topCitiesChartData.raw_data : stats.top_cities)" 
                   :key="city.city_id"
                   cols="12" 
                   sm="6" 
@@ -673,32 +686,260 @@ const goBack = () => {
         </v-col>
       </v-row>
 
-      <!-- Top Cities and Zip Codes -->
-      <v-row>
-        <!-- Top Cities -->
-        <v-col cols="12" md="6" v-if="stats.top_cities.length > 0">
-          <UiParentCard title="Top Cities">
+      <!-- Cities Distribution Table -->
+      <v-row class="mb-4" v-if="topCitiesChartData.raw_data && topCitiesChartData.raw_data.length > 0">
+        <v-col cols="12">
+          <UiParentCard title="Cities Distribution">
             <v-table>
               <thead>
                 <tr>
+                  <th class="text-left">Rank</th>
                   <th class="text-left">City</th>
                   <th class="text-right">Total Requests</th>
+                  <th class="text-right">Percentage</th>
                   <th class="text-right">Reports</th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="city in stats.top_cities" :key="city.city_id">
-                  <td class="font-weight-medium">{{ city.name }}</td>
-                  <td class="text-right">{{ city.total_requests.toLocaleString() }}</td>
-                  <td class="text-right">{{ city.report_count }}</td>
+                <tr v-for="(city, index) in topCitiesChartData.raw_data" :key="city.city_id">
+                  <td>
+                    <v-chip
+                      :color="index < 3 ? 'primary' : 'default'"
+                      variant="flat"
+                      size="small"
+                    >
+                      <v-icon v-if="index === 0" size="small" class="mr-1">mdi-trophy</v-icon>
+                      <v-icon v-else-if="index === 1" size="small" class="mr-1">mdi-medal</v-icon>
+                      <v-icon v-else-if="index === 2" size="small" class="mr-1">mdi-medal-outline</v-icon>
+                      #{{ index + 1 }}
+                    </v-chip>
+                  </td>
+                  <td>
+                    <div class="font-weight-medium">{{ city.name }}</div>
+                    <div class="text-caption text-medium-emphasis">ID: {{ city.city_id }}</div>
+                  </td>
+                  <td class="text-right font-weight-medium">
+                    {{ city.total_requests.toLocaleString() }}
+                  </td>
+                  <td class="text-right">
+                    <v-chip color="primary" variant="tonal" size="small">
+                      {{ 'percentage' in city ? (city as any).percentage.toFixed(1) : '0.0' }}%
+                    </v-chip>
+                  </td>
+                  <td class="text-right">
+                    <v-chip size="small" variant="outlined">
+                      {{ 'report_count' in city ? city.report_count : 0 }}
+                    </v-chip>
+                  </td>
                 </tr>
               </tbody>
             </v-table>
           </UiParentCard>
         </v-col>
+      </v-row>
 
-        <!-- Top Zip Codes -->
-        <v-col cols="12" md="6" v-if="stats.top_zip_codes.length > 0">
+      <!-- Detailed Charts by City -->
+      <v-row class="mb-4" v-if="stats.cities_detailed_charts && stats.cities_detailed_charts.length > 0">
+        <v-col cols="12">
+          <UiParentCard title="Detailed Analysis by City">
+            <v-expansion-panels variant="accordion" class="mb-4">
+              <v-expansion-panel
+                v-for="cityData in stats.cities_detailed_charts"
+                :key="cityData.city_id"
+              >
+                <v-expansion-panel-title>
+                  <div class="d-flex align-center justify-space-between w-100 pr-4">
+                    <div>
+                      <span class="font-weight-bold text-h6">{{ cityData.city_name }}</span>
+                      <span class="text-caption text-medium-emphasis ml-2">
+                        ({{ cityData.total_requests.toLocaleString() }} requests)
+                      </span>
+                    </div>
+                    <v-chip color="primary" variant="tonal" size="small">
+                      ID: {{ cityData.city_id }}
+                    </v-chip>
+                  </div>
+                </v-expansion-panel-title>
+                <v-expansion-panel-text>
+                  <v-row>
+                    <!-- Providers Chart for City -->
+                    <v-col cols="12" md="6">
+                      <UiParentCard :title="`Providers - ${cityData.city_name}`">
+                        <div v-if="cityData.providers_chart.labels.length > 0">
+                          <apexchart
+                            type="bar"
+                            height="300"
+                            :options="{
+                              chart: {
+                                type: 'bar',
+                                fontFamily: 'inherit',
+                                toolbar: { show: false }
+                              },
+                              title: {
+                                text: 'Provider Distribution',
+                                align: 'left',
+                                style: { fontSize: '16px', fontWeight: 600 }
+                              },
+                              plotOptions: {
+                                bar: {
+                                  horizontal: true,
+                                  borderRadius: 4,
+                                  distributed: true
+                                }
+                              },
+                              dataLabels: {
+                                enabled: true,
+                                formatter: function(val: number, opts: any) {
+                                  const index = opts.dataPointIndex;
+                                  const percentage = cityData.providers_chart.percentages[index];
+                                  return percentage !== undefined 
+                                    ? `${val.toLocaleString()} (${percentage.toFixed(1)}%)`
+                                    : val.toLocaleString();
+                                },
+                                style: {
+                                  fontSize: '11px',
+                                  fontWeight: 600,
+                                  colors: ['#fff']
+                                }
+                              },
+                              xaxis: {
+                                title: { text: 'Number of Requests' },
+                                labels: {
+                                  formatter: function(val: number) {
+                                    return val.toLocaleString();
+                                  }
+                                }
+                              },
+                              yaxis: {
+                                categories: cityData.providers_chart.labels,
+                                labels: {
+                                  style: { fontSize: '12px' },
+                                  maxWidth: 120
+                                }
+                              },
+                              colors: cityData.providers_chart.datasets[0]?.backgroundColor || ['#3B82F6'],
+                              grid: {
+                                show: true,
+                                borderColor: '#f0f0f0',
+                                xaxis: { lines: { show: true } },
+                                yaxis: { lines: { show: false } }
+                              },
+                              tooltip: {
+                                y: {
+                                  formatter: function(val: number, opts: any) {
+                                    const index = opts.dataPointIndex;
+                                    const percentage = cityData.providers_chart.percentages[index];
+                                    return percentage !== undefined
+                                      ? `${val.toLocaleString()} requisições (${percentage.toFixed(1)}%)`
+                                      : `${val.toLocaleString()} requisições`;
+                                  }
+                                }
+                              }
+                            }"
+                            :series="[{ name: 'Requests', data: cityData.providers_chart.datasets[0]?.data || [] }]"
+                          />
+                        </div>
+                        <div v-else class="text-center py-8">
+                          <v-icon size="64" color="grey">mdi-chart-bar</v-icon>
+                          <p class="text-h6 mt-4 text-medium-emphasis">No provider data available</p>
+                        </div>
+                      </UiParentCard>
+                    </v-col>
+
+                    <!-- Technologies Chart for City -->
+                    <v-col cols="12" md="6">
+                      <UiParentCard :title="`Technologies - ${cityData.city_name}`">
+                        <div v-if="cityData.technologies_chart.labels.length > 0">
+                          <apexchart
+                            type="bar"
+                            height="300"
+                            :options="{
+                              chart: {
+                                type: 'bar',
+                                fontFamily: 'inherit',
+                                toolbar: { show: false }
+                              },
+                              title: {
+                                text: 'Technology Distribution',
+                                align: 'left',
+                                style: { fontSize: '16px', fontWeight: 600 }
+                              },
+                              plotOptions: {
+                                bar: {
+                                  horizontal: true,
+                                  borderRadius: 4,
+                                  distributed: true
+                                }
+                              },
+                              dataLabels: {
+                                enabled: true,
+                                formatter: function(val: number, opts: any) {
+                                  const index = opts.dataPointIndex;
+                                  const percentage = cityData.technologies_chart.percentages[index];
+                                  return percentage !== undefined 
+                                    ? `${val.toLocaleString()} (${percentage.toFixed(1)}%)`
+                                    : val.toLocaleString();
+                                },
+                                style: {
+                                  fontSize: '11px',
+                                  fontWeight: 600,
+                                  colors: ['#fff']
+                                }
+                              },
+                              xaxis: {
+                                title: { text: 'Number of Requests' },
+                                labels: {
+                                  formatter: function(val: number) {
+                                    return val.toLocaleString();
+                                  }
+                                }
+                              },
+                              yaxis: {
+                                categories: cityData.technologies_chart.labels,
+                                labels: {
+                                  style: { fontSize: '12px' },
+                                  maxWidth: 120
+                                }
+                              },
+                              colors: cityData.technologies_chart.datasets[0]?.backgroundColor || ['#10B981'],
+                              grid: {
+                                show: true,
+                                borderColor: '#f0f0f0',
+                                xaxis: { lines: { show: true } },
+                                yaxis: { lines: { show: false } }
+                              },
+                              tooltip: {
+                                y: {
+                                  formatter: function(val: number, opts: any) {
+                                    const index = opts.dataPointIndex;
+                                    const percentage = cityData.technologies_chart.percentages[index];
+                                    return percentage !== undefined
+                                      ? `${val.toLocaleString()} requisições (${percentage.toFixed(1)}%)`
+                                      : `${val.toLocaleString()} requisições`;
+                                  }
+                                }
+                              }
+                            }"
+                            :series="[{ name: 'Requests', data: cityData.technologies_chart.datasets[0]?.data || [] }]"
+                          />
+                        </div>
+                        <div v-else class="text-center py-8">
+                          <v-icon size="64" color="grey">mdi-chart-bar</v-icon>
+                          <p class="text-h6 mt-4 text-medium-emphasis">No technology data available</p>
+                        </div>
+                      </UiParentCard>
+                    </v-col>
+                  </v-row>
+                </v-expansion-panel-text>
+              </v-expansion-panel>
+            </v-expansion-panels>
+          </UiParentCard>
+        </v-col>
+      </v-row>
+
+      <!-- Top Zip Codes -->
+      <v-row v-if="stats.top_zip_codes.length > 0">
+        <v-col cols="12" md="6">
           <UiParentCard title="Top Zip Codes">
             <v-table>
               <thead>
