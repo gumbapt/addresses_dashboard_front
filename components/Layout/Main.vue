@@ -1,9 +1,74 @@
 <script setup lang="ts">
-import { ref, shallowRef } from "vue";
+import { ref, shallowRef, computed } from "vue";
 import sidebarItems from "@/components/Layout/Full/vertical-sidebar/sidebarItem";
 // Icon Imports
 import { Menu2Icon, BellRingingIcon } from "vue-tabler-icons";
-const sidebarMenu = shallowRef(sidebarItems);
+
+const { hasPermission, isSuperAdmin } = usePermissions();
+
+// Function to check if an item should be displayed
+const shouldShowItem = (item: any) => {
+  // If item is Super Admin only, check that first
+  if (item.superAdminOnly) {
+    return isSuperAdmin.value;
+  }
+  
+  // If no permission defined, always show
+  if (!item.permission) {
+    return true;
+  }
+  
+  // Super admin sees everything
+  if (isSuperAdmin.value) {
+    return true;
+  }
+  
+  // Check specific permission
+  return hasPermission(item.permission);
+};
+
+// Filter menu items to only show visible ones and headers with visible items
+const filteredSidebarMenu = computed(() => {
+  const filtered: any[] = [];
+  let currentHeader: any = null;
+  
+  for (let i = 0; i < sidebarItems.length; i++) {
+    const item = sidebarItems[i];
+    
+    // If it's a header, check if there are visible items after it
+    if (item.header) {
+      // Look ahead to see if there are any visible items before the next header
+      let hasVisibleItems = false;
+      for (let j = i + 1; j < sidebarItems.length; j++) {
+        const nextItem = sidebarItems[j];
+        // If we hit another header, stop looking
+        if (nextItem.header) {
+          break;
+        }
+        // Check if this item should be shown
+        if (shouldShowItem(nextItem)) {
+          hasVisibleItems = true;
+          break;
+        }
+      }
+      
+      // Only add header if there are visible items after it
+      if (hasVisibleItems) {
+        filtered.push(item);
+        currentHeader = item;
+      }
+    } else {
+      // Regular item - only add if it should be shown
+      if (shouldShowItem(item)) {
+        filtered.push(item);
+      }
+    }
+  }
+  
+  return filtered;
+});
+
+const sidebarMenu = computed(() => filteredSidebarMenu.value);
 const sDrawer = ref(true);
 </script>
 
