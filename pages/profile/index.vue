@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref, reactive } from 'vue';
 import UiParentCard from '@/components/shared/UiParentCard.vue';
 import UiChildCard from '@/components/shared/UiChildCard.vue';
 
@@ -11,6 +11,83 @@ definePageMeta({
 // Get user data and permissions
 const { user } = useAuth();
 const { roles, permissions, isSuperAdmin } = usePermissions();
+
+// Change password
+const { loading: changingPassword, error: passwordError, errors: passwordErrors, changePassword, clearErrors } = useChangePassword();
+const notification = useNotification();
+
+const passwordForm = reactive({
+  current_password: '',
+  new_password: '',
+  new_password_confirmation: ''
+});
+
+const showPasswordForm = ref(false);
+const passwordSuccess = ref(false);
+
+const validatePasswordForm = () => {
+  clearErrors();
+  let isValid = true;
+  
+  if (!passwordForm.current_password) {
+    isValid = false;
+  }
+  
+  if (!passwordForm.new_password) {
+    isValid = false;
+  } else if (passwordForm.new_password.length < 8) {
+    isValid = false;
+  }
+  
+  if (!passwordForm.new_password_confirmation) {
+    isValid = false;
+  } else if (passwordForm.new_password !== passwordForm.new_password_confirmation) {
+    isValid = false;
+  }
+  
+  return isValid;
+};
+
+const handleChangePassword = async () => {
+  passwordSuccess.value = false;
+  clearErrors();
+  
+  if (!validatePasswordForm()) {
+    notification.warning('Please fill in all fields correctly');
+    return;
+  }
+  
+  const result = await changePassword(
+    passwordForm.current_password,
+    passwordForm.new_password,
+    passwordForm.new_password_confirmation
+  );
+  
+  if (result.success) {
+    passwordSuccess.value = true;
+    notification.success('Password changed successfully!');
+    
+    // Clear form after 2 seconds
+    setTimeout(() => {
+      resetPasswordForm();
+      passwordSuccess.value = false;
+    }, 2000);
+  } else {
+    if (passwordError.value) {
+      notification.error(passwordError.value);
+    } else {
+      notification.error('Error changing password. Please check the fields and try again.');
+    }
+  }
+};
+
+const resetPasswordForm = () => {
+  passwordForm.current_password = '';
+  passwordForm.new_password = '';
+  passwordForm.new_password_confirmation = '';
+  clearErrors();
+  passwordSuccess.value = false;
+};
 
 // Format last login date
 const formattedLastLogin = computed(() => {
@@ -122,6 +199,114 @@ const resources = computed(() => {
         </UiParentCard>
       </v-col>
 
+      <!-- Change Password - Highlighted Section -->
+      <v-col cols="12">
+        <UiParentCard title="Change Password" class="border-primary">
+          <v-row>
+            <v-col cols="12" md="8">
+              <v-form @submit.prevent="handleChangePassword">
+                <!-- Current Password -->
+                <v-text-field
+                  v-model="passwordForm.current_password"
+                  label="Current Password"
+                  type="password"
+                  variant="outlined"
+                  density="compact"
+                  prepend-inner-icon="mdi-lock"
+                  :error-messages="passwordErrors.current_password"
+                  :disabled="changingPassword"
+                  class="mb-3"
+                />
+                
+                <!-- New Password -->
+                <v-text-field
+                  v-model="passwordForm.new_password"
+                  label="New Password"
+                  type="password"
+                  variant="outlined"
+                  density="compact"
+                  prepend-inner-icon="mdi-lock-plus"
+                  :error-messages="passwordErrors.new_password"
+                  :disabled="changingPassword"
+                  hint="Minimum 8 characters"
+                  persistent-hint
+                  class="mb-3"
+                />
+                
+                <!-- Confirm New Password -->
+                <v-text-field
+                  v-model="passwordForm.new_password_confirmation"
+                  label="Confirm New Password"
+                  type="password"
+                  variant="outlined"
+                  density="compact"
+                  prepend-inner-icon="mdi-lock-check"
+                  :error-messages="passwordErrors.new_password_confirmation"
+                  :disabled="changingPassword"
+                  class="mb-4"
+                />
+                
+                <!-- Success Message -->
+                <v-alert
+                  v-if="passwordSuccess"
+                  type="success"
+                  variant="tonal"
+                  class="mb-4"
+                >
+                  Password changed successfully!
+                </v-alert>
+                
+                <!-- Error Message -->
+                <v-alert
+                  v-if="passwordError && !passwordSuccess"
+                  type="error"
+                  variant="tonal"
+                  class="mb-4"
+                >
+                  {{ passwordError }}
+                </v-alert>
+                
+                <!-- Actions -->
+                <div class="d-flex gap-2">
+                  <v-btn
+                    type="submit"
+                    color="primary"
+                    :loading="changingPassword"
+                    :disabled="changingPassword"
+                  >
+                    <v-icon start>mdi-key</v-icon>
+                    Change Password
+                  </v-btn>
+                  <v-btn
+                    variant="outlined"
+                    @click="resetPasswordForm"
+                    :disabled="changingPassword"
+                  >
+                    Reset
+                  </v-btn>
+                </div>
+              </v-form>
+            </v-col>
+            <v-col cols="12" md="4">
+              <v-card variant="tonal" color="info" class="pa-4">
+                <v-card-title class="text-h6 mb-2">
+                  <v-icon class="mr-2">mdi-information</v-icon>
+                  Password Requirements
+                </v-card-title>
+                <v-card-text>
+                  <ul class="text-body-2">
+                    <li>Minimum 8 characters</li>
+                    <li>Current password required</li>
+                    <li>New password must be confirmed</li>
+                    <li>Password change is immediate</li>
+                  </ul>
+                </v-card-text>
+              </v-card>
+            </v-col>
+          </v-row>
+        </UiParentCard>
+      </v-col>
+
       <!-- Roles -->
       <v-col cols="12" md="6">
         <UiParentCard title="Roles">
@@ -153,25 +338,89 @@ const resources = computed(() => {
 
       <!-- Permissions Summary -->
       <v-col cols="12" md="6">
-        <UiParentCard title="Permissions Summary">
-          <div class="text-center py-4">
-            <v-icon size="48" :color="isSuperAdmin ? 'warning' : 'primary'">
-              {{ isSuperAdmin ? 'mdi-shield-crown' : 'mdi-shield-check' }}
-            </v-icon>
-            <p class="text-h4 mt-2">{{ permissions.length }}</p>
-            <p class="text-body-1 text-medium-emphasis">Total Permissions</p>
-            <v-chip 
-              v-if="isSuperAdmin" 
-              color="warning" 
-              size="small" 
-              class="mt-2"
+        <UiParentCard title="Change Password">
+          <v-form @submit.prevent="handleChangePassword">
+            <!-- Current Password -->
+            <v-text-field
+              v-model="passwordForm.current_password"
+              label="Current Password"
+              type="password"
+              variant="outlined"
+              density="compact"
+              prepend-inner-icon="mdi-lock"
+              :error-messages="passwordErrors.current_password"
+              :disabled="changingPassword"
+              class="mb-3"
+            />
+            
+            <!-- New Password -->
+            <v-text-field
+              v-model="passwordForm.new_password"
+              label="New Password"
+              type="password"
+              variant="outlined"
+              density="compact"
+              prepend-inner-icon="mdi-lock-plus"
+              :error-messages="passwordErrors.new_password"
+              :disabled="changingPassword"
+              hint="Minimum 8 characters"
+              persistent-hint
+              class="mb-3"
+            />
+            
+            <!-- Confirm New Password -->
+            <v-text-field
+              v-model="passwordForm.new_password_confirmation"
+              label="Confirm New Password"
+              type="password"
+              variant="outlined"
+              density="compact"
+              prepend-inner-icon="mdi-lock-check"
+              :error-messages="passwordErrors.new_password_confirmation"
+              :disabled="changingPassword"
+              class="mb-4"
+            />
+            
+            <!-- Success Message -->
+            <v-alert
+              v-if="passwordSuccess"
+              type="success"
+              variant="tonal"
+              class="mb-4"
             >
-              Super Admin - All Permissions Granted
-            </v-chip>
-            <p v-else class="text-caption text-medium-emphasis mt-2">
-              Permissions from {{ roles.length }} role(s)
-            </p>
-          </div>
+              Password changed successfully!
+            </v-alert>
+            
+            <!-- Error Message -->
+            <v-alert
+              v-if="passwordError && !passwordSuccess"
+              type="error"
+              variant="tonal"
+              class="mb-4"
+            >
+              {{ passwordError }}
+            </v-alert>
+            
+            <!-- Actions -->
+            <div class="d-flex gap-2">
+              <v-btn
+                type="submit"
+                color="primary"
+                :loading="changingPassword"
+                :disabled="changingPassword"
+              >
+                <v-icon start>mdi-key</v-icon>
+                Change Password
+              </v-btn>
+              <v-btn
+                variant="outlined"
+                @click="resetPasswordForm"
+                :disabled="changingPassword"
+              >
+                Reset
+              </v-btn>
+            </div>
+          </v-form>
         </UiParentCard>
       </v-col>
 
