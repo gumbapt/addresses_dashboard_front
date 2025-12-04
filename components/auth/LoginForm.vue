@@ -24,9 +24,9 @@ const handleLogin = async () => {
     const result = await login(email.value, password.value);
     
     if (result.success) {
-      // Login bem-sucedido, redirecionar para dashboard
+      // Login bem-sucedido, redirecionar para analytics
       notification.success('Login successful');
-      navigateTo('/dashboard');
+      navigateTo('/analytics');
     } else {
       // Exibir a mensagem de erro específica da API
       errorMessage.value = result.error || 'Login failed';

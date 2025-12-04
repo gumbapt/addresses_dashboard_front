@@ -14,10 +14,10 @@ definePageMeta({
 
 const { isAuthenticated } = useAuth();
 
-// Redirect to dashboard if authenticated, otherwise to login
+// Redirect to analytics if authenticated, otherwise to login
 onMounted(() => {
   if (isAuthenticated.value) {
-    navigateTo('/dashboard');
+    navigateTo('/analytics');
   } else {
     navigateTo('/auth/login');
   }

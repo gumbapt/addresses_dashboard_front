@@ -9,8 +9,8 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     return navigateTo('/auth/login')
   }
   
-  // Se estiver autenticado e tentar acessar páginas de auth, redirecionar para dashboard
+  // Se estiver autenticado e tentar acessar páginas de auth, redirecionar para analytics
   if (isAuthenticated && (to.path === '/auth/login' || to.path === '/auth/register')) {
-    return navigateTo('/dashboard')
+    return navigateTo('/analytics')
   }
 }) 

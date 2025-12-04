@@ -38,9 +38,9 @@ const sidebarItem: menu[] = [
   //   to: "/dashboard",
   // },
   {
-    title: "Dashboard",
+    title: "Analytics",
     icon: "graph-new-linear",
-    to: "/dashboard",
+    to: "/analytics",
     permission: "report-read",
   },
   // {
