@@ -71,7 +71,7 @@ const sidebarItem: menu[] = [
     title: "Domains",
     icon: "global-outline",
     to: "/domains",
-    permission: "domain-read",
+    permission: "domain-update",
   },
   {
     title: "Domain Groups",

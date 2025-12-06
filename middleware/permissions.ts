@@ -25,7 +25,7 @@ export default defineNuxtRouteMiddleware((to) => {
     '/roles/create': ['role-create'],
     '/roles/edit': ['role-update'],
     '/roles/delete': ['role-delete'],
-    '/domains': ['domain-read'],
+    '/domains': ['domain-update'],
     '/domains/create': ['domain-create'],
     '/domains/edit': ['domain-update'],
     '/domains/delete': ['domain-delete'],
