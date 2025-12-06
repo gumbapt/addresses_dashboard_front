@@ -56,9 +56,9 @@ const sidebarItem: menu[] = [
   //   permission: "user-read",
   // },
   {
-    title: "Administrators",
+    title: "Users",
     icon: "shield-user-outline",
-    to: "/admins",
+    to: "/users",
     permission: "admin-read",
   },
   {
