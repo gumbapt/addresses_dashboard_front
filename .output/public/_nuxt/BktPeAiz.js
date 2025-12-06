@@ -1,0 +1,1 @@
+import{a8 as n,a9 as s,aa as r,ab as o,ac as c}from"./aleRfsrb.js";function i(t){var e;const a=t||s();return((e=a==null?void 0:a.ssrContext)==null?void 0:e.head)||(a==null?void 0:a.runWithContext(()=>{if(r())return o(c)}))}function d(t,a={}){const e=i(a.nuxt);if(e)return n(t,{head:e,...a})}export{d as u};
