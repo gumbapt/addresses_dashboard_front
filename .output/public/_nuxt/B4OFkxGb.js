@@ -1,0 +1,1 @@
+import{T as n,u as r,U as h,n as s}from"./Cwk7k6Hy.js";const l=n(async(t,c)=>{let a,e;const{checkAuth:i}=r(),u=([a,e]=h(()=>i()),a=await a,e(),a);if(!u&&t.path!=="/auth/login"&&t.path!=="/auth/register")return s("/auth/login");if(u&&(t.path==="/auth/login"||t.path==="/auth/register"))return s("/analytics")});export{l as default};
