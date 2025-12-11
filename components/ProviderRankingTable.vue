@@ -484,7 +484,71 @@ const updateURL = () => {
   }, { replace: true });
 };
 
+// Calculate date range from period
+const calculateDateRangeFromPeriod = (period: string | null): { date_from: string | null; date_to: string | null } => {
+  if (!period || period === 'all_time') {
+    return { date_from: null, date_to: null };
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  let dateFrom: Date;
+  let dateTo: Date = new Date(today);
+
+  switch (period) {
+    case 'today':
+      dateFrom = new Date(today);
+      dateTo = new Date(today);
+      break;
+    
+    case 'yesterday':
+      dateFrom = new Date(today);
+      dateFrom.setDate(dateFrom.getDate() - 1);
+      dateTo = new Date(dateFrom);
+      break;
+    
+    case 'last_week':
+      dateFrom = new Date(today);
+      dateFrom.setDate(dateFrom.getDate() - 6); // Last 7 days (including today)
+      break;
+    
+    case 'last_month':
+      dateFrom = new Date(today);
+      dateFrom.setDate(dateFrom.getDate() - 29); // Last 30 days (including today)
+      break;
+    
+    case 'last_year':
+      dateFrom = new Date(today);
+      dateFrom.setDate(dateFrom.getDate() - 364); // Last 365 days (including today)
+      break;
+    
+    default:
+      return { date_from: null, date_to: null };
+  }
+
+  // Format to ISO (YYYY-MM-DD)
+  const formatDate = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  return {
+    date_from: formatDate(dateFrom),
+    date_to: formatDate(dateTo)
+  };
+};
+
 const onFilterChange = () => {
+  // If period is selected, calculate and set dates automatically
+  if (localFilters.value.period) {
+    const dateRange = calculateDateRangeFromPeriod(localFilters.value.period);
+    localFilters.value.date_from = dateRange.date_from;
+    localFilters.value.date_to = dateRange.date_to;
+  }
+  
   // Reset to page 1 when filters change
   localFilters.value.page = 1;
   updateFilters(localFilters.value);
