@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import { useRoute } from 'vue-router';
 import UiParentCard from '@/components/shared/UiParentCard.vue';
 
 // Define middleware
@@ -31,6 +30,20 @@ const { domains: allDomains, loadDomains } = useDomains();
 // States
 const selectedReportId = ref<number | string>('all');
 const showAllReports = ref(false);
+
+// Period and date filters
+const selectedPeriod = ref<'today' | 'yesterday' | 'last_week' | 'last_month' | 'last_year' | 'all_time' | null>(null);
+const dateFrom = ref<string | null>(null);
+const dateTo = ref<string | null>(null);
+
+const periodOptions = [
+  { title: '📅 Today', value: 'today' },
+  { title: '📅 Yesterday', value: 'yesterday' },
+  { title: '📅 Last Week', value: 'last_week' },
+  { title: '📅 Last Month', value: 'last_month' },
+  { title: '📅 Last Year', value: 'last_year' },
+  { title: '📅 All Time', value: 'all_time' }
+];
 
 // Domain info
 const currentDomain = computed(() => {
@@ -80,19 +93,104 @@ onMounted(async () => {
   await loadReports({ domain_id: domainId.value, per_page: 100 });
   
   // Auto-load aggregated data
-  await loadAggregatedStats(domainId.value);
+  await loadData();
   selectedReportId.value = 'all';
 });
 
-// Watch to load data when report changes
-watch(selectedReportId, async (newId) => {
-  if (newId === 'all') {
-    showAllReports.value = false;
-    await loadAggregatedStats(domainId.value);
-  } else if (newId) {
-    showAllReports.value = false;
-    await loadDashboardStats(newId as number);
+// Calculate date range from period
+const calculateDateRangeFromPeriod = (period: string | null): { date_from: string | null; date_to: string | null } => {
+  if (!period || period === 'all_time') {
+    return { date_from: null, date_to: null };
   }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  let dateFrom: Date;
+  let dateTo: Date = new Date(today);
+
+  switch (period) {
+    case 'today':
+      dateFrom = new Date(today);
+      dateTo = new Date(today);
+      break;
+    
+    case 'yesterday':
+      dateFrom = new Date(today);
+      dateFrom.setDate(dateFrom.getDate() - 1);
+      dateTo = new Date(dateFrom);
+      break;
+    
+    case 'last_week':
+      dateFrom = new Date(today);
+      dateFrom.setDate(dateFrom.getDate() - 6); // Last 7 days (including today)
+      break;
+    
+    case 'last_month':
+      dateFrom = new Date(today);
+      dateFrom.setDate(dateFrom.getDate() - 29); // Last 30 days (including today)
+      break;
+    
+    case 'last_year':
+      dateFrom = new Date(today);
+      dateFrom.setDate(dateFrom.getDate() - 364); // Last 365 days (including today)
+      break;
+    
+    default:
+      return { date_from: null, date_to: null };
+  }
+
+  // Format to ISO (YYYY-MM-DD)
+  const formatDate = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  return {
+    date_from: formatDate(dateFrom),
+    date_to: formatDate(dateTo)
+  };
+};
+
+// Handle period change
+const onPeriodChange = () => {
+  if (selectedPeriod.value) {
+    const dateRange = calculateDateRangeFromPeriod(selectedPeriod.value);
+    dateFrom.value = dateRange.date_from;
+    dateTo.value = dateRange.date_to;
+  }
+  loadData();
+};
+
+// Handle date change
+const onDateChange = () => {
+  // When dates change, clear period to avoid conflicts
+  if (dateFrom.value || dateTo.value) {
+    selectedPeriod.value = null;
+  }
+  loadData();
+};
+
+// Load data function
+const loadData = async () => {
+  if (selectedReportId.value === 'all') {
+    showAllReports.value = false;
+    await loadAggregatedStats(domainId.value, {
+      period: selectedPeriod.value,
+      date_from: dateFrom.value,
+      date_to: dateTo.value
+    });
+  } else if (selectedReportId.value) {
+    showAllReports.value = false;
+    await loadDashboardStats(selectedReportId.value as number);
+  }
+};
+
+// Watch to load data when report changes
+watch(selectedReportId, () => {
+  loadData();
 });
 
 // Chart configurations
@@ -372,6 +470,50 @@ const toggleShowAll = () => {
             </v-btn>
           </div>
         </div>
+      </v-col>
+    </v-row>
+
+    <!-- Period and Date Filters (only when "All Reports Combined" is selected) -->
+    <v-row v-if="selectedReportId === 'all'" class="mb-4">
+      <v-col cols="12">
+        <v-card variant="outlined" class="pa-3">
+          <div class="text-caption text-medium-emphasis mb-2">
+            <v-icon size="small" class="mr-1">mdi-filter</v-icon>
+            Filter by Period or Date Range
+          </div>
+          <v-row>
+            <v-col cols="12" md="3">
+              <v-select
+                v-model="selectedPeriod"
+                :items="periodOptions"
+                label="Period"
+                clearable
+                variant="outlined"
+                density="compact"
+                prepend-inner-icon="mdi-calendar-range"
+                @update:model-value="onPeriodChange"
+              />
+            </v-col>
+
+            <v-col cols="12" sm="6" md="4">
+              <USDatePicker
+                :model-value="dateFrom"
+                label="Start Date"
+                prepend-inner-icon="mdi-calendar-start"
+                @update:model-value="(value: string | null) => { dateFrom = value; onDateChange(); }"
+              />
+            </v-col>
+
+            <v-col cols="12" sm="6" md="4">
+              <USDatePicker
+                :model-value="dateTo"
+                label="End Date"
+                prepend-inner-icon="mdi-calendar-end"
+                @update:model-value="(value: string | null) => { dateTo = value; onDateChange(); }"
+              />
+            </v-col>
+          </v-row>
+        </v-card>
       </v-col>
     </v-row>
 

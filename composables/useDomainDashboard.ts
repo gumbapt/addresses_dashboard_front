@@ -48,12 +48,34 @@ export const useDomainDashboard = () => {
   };
 
   // Carregar dados agregados de um domínio
-  const loadAggregatedStats = async (domainId: number) => {
+  const loadAggregatedStats = async (
+    domainId: number,
+    filters?: {
+      period?: string | null;
+      date_from?: string | null;
+      date_to?: string | null;
+    }
+  ) => {
     loading.value = true;
     error.value = null;
     
     try {
-      const response = await apiClient.get<{ success: boolean; data: AggregatedDomainStats }>(`/reports/domain/${domainId}/aggregate`);
+      // Build query parameters
+      const queryParams = new URLSearchParams();
+      if (filters?.period) {
+        queryParams.append('period', filters.period);
+      }
+      if (filters?.date_from) {
+        queryParams.append('date_from', filters.date_from);
+      }
+      if (filters?.date_to) {
+        queryParams.append('date_to', filters.date_to);
+      }
+      
+      const queryString = queryParams.toString();
+      const url = `/reports/domain/${domainId}/aggregate${queryString ? `?${queryString}` : ''}`;
+      
+      const response = await apiClient.get<{ success: boolean; data: AggregatedDomainStats }>(url);
       
       if (response.success && response.data) {
         aggregatedData.value = response.data;
