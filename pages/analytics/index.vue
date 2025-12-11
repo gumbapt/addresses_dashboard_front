@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import UiParentCard from '@/components/shared/UiParentCard.vue';
 import UiChildCard from '@/components/shared/UiChildCard.vue';
 import ProviderRankingTable from '@/components/ProviderRankingTable.vue';
@@ -388,10 +388,99 @@ watch(selectedStateId, async (newStateId) => {
 });
 
 
+// Calculate date range from period for State Ranking
+const calculateStateRankingDateRange = (period: string | null): { date_from: string | null; date_to: string | null } => {
+  if (!period || period === 'all_time') {
+    return { date_from: null, date_to: null };
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  let dateFrom: Date;
+  let dateTo: Date = new Date(today);
+
+  switch (period) {
+    case 'today':
+      dateFrom = new Date(today);
+      dateTo = new Date(today);
+      break;
+    
+    case 'yesterday':
+      dateFrom = new Date(today);
+      dateFrom.setDate(dateFrom.getDate() - 1);
+      dateTo = new Date(dateFrom);
+      break;
+    
+    case 'last_week':
+      dateFrom = new Date(today);
+      dateFrom.setDate(dateFrom.getDate() - 6); // Last 7 days (including today)
+      break;
+    
+    case 'last_month':
+      dateFrom = new Date(today);
+      dateFrom.setDate(dateFrom.getDate() - 29); // Last 30 days (including today)
+      break;
+    
+    case 'last_year':
+      dateFrom = new Date(today);
+      dateFrom.setDate(dateFrom.getDate() - 364); // Last 365 days (including today)
+      break;
+    
+    default:
+      return { date_from: null, date_to: null };
+  }
+
+  // Format to ISO (YYYY-MM-DD)
+  const formatDate = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  return {
+    date_from: formatDate(dateFrom),
+    date_to: formatDate(dateTo)
+  };
+};
+
+// Flag to prevent infinite loops
+const isUpdatingStateRankingFilters = ref(false);
+
 // Watch for filter changes
-watch(() => stateRankingFilters.value.period, async () => {
-  if (selectedStateId.value) {
+watch(() => stateRankingFilters.value.period, async (newPeriod, oldPeriod) => {
+  if (!selectedStateId.value || isUpdatingStateRankingFilters.value) return;
+  if (newPeriod === oldPeriod) return;
+  
+  isUpdatingStateRankingFilters.value = true;
+  
+  try {
+    // If period is selected, calculate and set dates automatically
+    if (newPeriod) {
+      const dateRange = calculateStateRankingDateRange(newPeriod);
+      // Update dates without triggering date watch
+      updateStateRankingFilters({
+        date_from: dateRange.date_from,
+        date_to: dateRange.date_to
+      });
+    } else {
+      // If period is cleared, also clear dates
+      updateStateRankingFilters({
+        date_from: null,
+        date_to: null
+      });
+    }
+    
+    // Wait a bit before updating URL to avoid conflicts
+    await nextTick();
+    updateStateRankingURL();
     await loadRankingByState();
+  } finally {
+    // Reset flag after a delay to ensure all updates are complete
+    setTimeout(() => {
+      isUpdatingStateRankingFilters.value = false;
+    }, 100);
   }
 });
 
@@ -413,46 +502,64 @@ watch(() => stateRankingFilters.value.aggregate_by_provider, async () => {
   }
 });
 
-// Watch for date filter changes
-watch(() => stateRankingFilters.value.date_from, async () => {
-  if (selectedStateId.value) {
+// Handle state ranking date changes (called directly from USDatePicker)
+const onStateRankingDateChange = async () => {
+  if (!selectedStateId.value || isUpdatingStateRankingFilters.value) return;
+  
+  isUpdatingStateRankingFilters.value = true;
+  
+  try {
     // Clear period when custom dates are selected
+    const currentPeriod = stateRankingFilters.value.period;
     if (stateRankingFilters.value.date_from || stateRankingFilters.value.date_to) {
-      updateStateRankingFilters({ period: null });
+      if (currentPeriod) {
+        updateStateRankingFilters({ period: null });
+      }
+    } else {
+      // If both dates are cleared, also clear period
+      if (currentPeriod) {
+        updateStateRankingFilters({ period: null });
+      }
     }
     updateStateRankingURL();
     await loadRankingByState();
+  } finally {
+    setTimeout(() => {
+      isUpdatingStateRankingFilters.value = false;
+    }, 100);
   }
-});
-
-watch(() => stateRankingFilters.value.date_to, async () => {
-  if (selectedStateId.value) {
-    // Clear period when custom dates are selected
-    if (stateRankingFilters.value.date_from || stateRankingFilters.value.date_to) {
-      updateStateRankingFilters({ period: null });
-    }
-    updateStateRankingURL();
-    await loadRankingByState();
-  }
-});
+};
 
 // Update URL query parameters for state ranking
 const updateStateRankingURL = () => {
-  const query: Record<string, any> = { ...route.query };
+  const query: Record<string, string> = {};
   
+  // Preserve other query params that might exist
+  const currentQuery = route.query;
+  Object.keys(currentQuery).forEach(key => {
+    // Only preserve params that are not related to state ranking
+    if (!key.startsWith('state_') && key !== 'state_date_from' && key !== 'state_date_to') {
+      query[key] = currentQuery[key] as string;
+    }
+  });
+  
+  // Add state ranking specific params
   if (stateRankingFilters.value.date_from) {
     query.state_date_from = stateRankingFilters.value.date_from;
-  } else {
-    delete query.state_date_from;
   }
-  
   if (stateRankingFilters.value.date_to) {
     query.state_date_to = stateRankingFilters.value.date_to;
-  } else {
-    delete query.state_date_to;
   }
   
-  navigateTo({ query }, { replace: true });
+  // Only navigate if query actually changed
+  const currentStateDateFrom = currentQuery.state_date_from as string;
+  const currentStateDateTo = currentQuery.state_date_to as string;
+  
+  if (query.state_date_from !== currentStateDateFrom || query.state_date_to !== currentStateDateTo) {
+    navigateTo({
+      query: Object.keys(query).length > 0 ? query : {}
+    }, { replace: true });
+  }
 };
 
 // Helper function to format date for display
@@ -1643,49 +1750,29 @@ const getTechColor = (technology: string | null) => {
                   </div>
                   <v-row>
                     <v-col cols="12" sm="6" md="4">
-                      <v-text-field
-                        v-model="stateRankingFilters.date_from"
-                        label="Data de Início"
-                        type="date"
-                        variant="outlined"
-                        density="compact"
-                        clearable
+                      <USDatePicker
+                        :model-value="stateRankingFilters.date_from"
+                        label="Start Date"
                         prepend-inner-icon="mdi-calendar-start"
+                        @update:model-value="async (value: string | null) => { 
+                          updateStateRankingFilters({ date_from: value }); 
+                          await nextTick();
+                          onStateRankingDateChange();
+                        }"
                       />
                     </v-col>
 
                     <v-col cols="12" sm="6" md="4">
-                      <v-text-field
-                        v-model="stateRankingFilters.date_to"
-                        label="Data de Fim"
-                        type="date"
-                        variant="outlined"
-                        density="compact"
-                        clearable
+                      <USDatePicker
+                        :model-value="stateRankingFilters.date_to"
+                        label="End Date"
                         prepend-inner-icon="mdi-calendar-end"
+                        @update:model-value="async (value: string | null) => { 
+                          updateStateRankingFilters({ date_to: value }); 
+                          await nextTick();
+                          onStateRankingDateChange();
+                        }"
                       />
-                    </v-col>
-                    <v-col cols="12" md="4" class="d-flex align-center">
-                      <v-alert
-                        v-if="stateRankingFilters.date_from || stateRankingFilters.date_to"
-                        type="info"
-                        variant="tonal"
-                        density="compact"
-                        class="mb-0"
-                      >
-                        <div class="text-caption">
-                          <v-icon size="small" class="mr-1">mdi-information</v-icon>
-                          <span v-if="stateRankingFilters.date_from && stateRankingFilters.date_to">
-                            Período: {{ formatStateDate(stateRankingFilters.date_from) }} até {{ formatStateDate(stateRankingFilters.date_to) }}
-                          </span>
-                          <span v-else-if="stateRankingFilters.date_from">
-                            A partir de: {{ formatStateDate(stateRankingFilters.date_from) }}
-                          </span>
-                          <span v-else-if="stateRankingFilters.date_to">
-                            Até: {{ formatStateDate(stateRankingFilters.date_to) }}
-                          </span>
-                        </div>
-                      </v-alert>
                     </v-col>
                   </v-row>
                 </v-card>
