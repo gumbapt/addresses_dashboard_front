@@ -121,7 +121,7 @@
                 :model-value="localFilters.date_from || null"
                 label="Start Date"
                 prepend-inner-icon="mdi-calendar-start"
-                @update:model-value="(value) => { localFilters.date_from = value; onDateChange(); }"
+                @update:model-value="(value: string | null) => { localFilters.date_from = value; onDateChange(); }"
               />
             </v-col>
 
@@ -130,7 +130,7 @@
                 :model-value="localFilters.date_to || null"
                 label="End Date"
                 prepend-inner-icon="mdi-calendar-end"
-                @update:model-value="(value) => { localFilters.date_to = value; onDateChange(); }"
+                @update:model-value="(value: string | null) => { localFilters.date_to = value; onDateChange(); }"
               />
             </v-col>
           </v-row>
@@ -247,9 +247,9 @@
         <thead>
           <tr>
             <th class="text-left">Rank</th>
-            <th class="text-left">Domain</th>
             <th class="text-left">Provider</th>
             <th class="text-left">Technology</th>
+            <th class="text-left">Domain</th>
             <th class="text-right">Provider Requests</th>
             <th class="text-right">Domain Total</th>
             <th class="text-center">% of Domain</th>
@@ -262,12 +262,6 @@
             <td class="font-weight-bold">
               <span v-if="item.hasMedal" class="mr-2">{{ item.medalEmoji }}</span>
               #{{ item.rank }}
-            </td>
-
-            <!-- Domain -->
-            <td>
-              <div class="font-weight-medium">{{ item.domain_name }}</div>
-              <div class="text-caption text-medium-emphasis">{{ item.domain_slug }}</div>
             </td>
 
             <!-- Provider -->
@@ -311,6 +305,12 @@
                 </v-chip>
               </div>
               <span v-else class="text-medium-emphasis">Unknown</span>
+            </td>
+
+            <!-- Domain -->
+            <td>
+              <div class="font-weight-medium">{{ item.domain_name }}</div>
+              <div class="text-caption text-medium-emphasis">{{ item.domain_slug }}</div>
             </td>
 
             <!-- Provider Requests -->
