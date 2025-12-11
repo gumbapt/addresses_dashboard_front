@@ -1,0 +1,1 @@
+import{av as n,aw as s,ax as r,a3 as u,ay as o}from"./AmEn0FOG.js";function i(e){const t=e||s();return t?.ssrContext?.head||t?.runWithContext(()=>{if(r())return u(o)})}function c(e,t={}){const a=i(t.nuxt);if(a)return n(e,{head:a,...t})}export{c as u};
