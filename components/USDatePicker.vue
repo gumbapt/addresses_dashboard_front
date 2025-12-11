@@ -27,6 +27,7 @@
           :hint="hint"
           :persistent-hint="persistentHint"
           readonly
+          @click:clear="handleClear"
           class="us-date-picker-field"
         />
       </template>

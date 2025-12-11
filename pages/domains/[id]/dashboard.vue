@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import UiParentCard from '@/components/shared/UiParentCard.vue';
 
 // Define middleware
@@ -92,9 +92,23 @@ onMounted(async () => {
   await loadDomains();
   await loadReports({ domain_id: domainId.value, per_page: 100 });
   
+  // Initialize from URL query params
+  if (route.query.date_from) {
+    dateFrom.value = route.query.date_from as string;
+  }
+  if (route.query.date_to) {
+    dateTo.value = route.query.date_to as string;
+  }
+  if (route.query.period) {
+    selectedPeriod.value = route.query.period as any;
+  }
+  
   // Auto-load aggregated data
   await loadData();
   selectedReportId.value = 'all';
+  
+  // Mark as initialized after initial load
+  isInitialized.value = true;
 });
 
 // Calculate date range from period
@@ -160,8 +174,32 @@ const onPeriodChange = () => {
     const dateRange = calculateDateRangeFromPeriod(selectedPeriod.value);
     dateFrom.value = dateRange.date_from;
     dateTo.value = dateRange.date_to;
+  } else {
+    // If period is cleared, also clear dates
+    dateFrom.value = null;
+    dateTo.value = null;
   }
+  updateURL();
   loadData();
+};
+
+// Update URL query parameters
+const updateURL = () => {
+  const query: Record<string, string> = {};
+  
+  if (dateFrom.value) {
+    query.date_from = dateFrom.value;
+  }
+  if (dateTo.value) {
+    query.date_to = dateTo.value;
+  }
+  if (selectedPeriod.value) {
+    query.period = selectedPeriod.value;
+  }
+  
+  navigateTo({
+    query: Object.keys(query).length > 0 ? query : {}
+  }, { replace: true });
 };
 
 // Handle date change
@@ -169,7 +207,11 @@ const onDateChange = () => {
   // When dates change, clear period to avoid conflicts
   if (dateFrom.value || dateTo.value) {
     selectedPeriod.value = null;
+  } else {
+    // If both dates are cleared, also clear period
+    selectedPeriod.value = null;
   }
+  updateURL();
   loadData();
 };
 
@@ -191,6 +233,30 @@ const loadData = async () => {
 // Watch to load data when report changes
 watch(selectedReportId, () => {
   loadData();
+});
+
+// Flag to track if component is initialized
+const isInitialized = ref(false);
+
+// Watch for date changes to reload data and update URL
+watch([dateFrom, dateTo], ([newDateFrom, newDateTo], [oldDateFrom, oldDateTo]) => {
+  // Skip on initial mount
+  if (!isInitialized.value) return;
+  
+  // Only trigger if we're viewing "All Reports Combined"
+  if (selectedReportId.value === 'all') {
+    // Clear period when dates change
+    if (newDateFrom || newDateTo) {
+      selectedPeriod.value = null;
+    } else {
+      // If both dates are cleared, also clear period
+      selectedPeriod.value = null;
+    }
+    // Update URL
+    updateURL();
+    // Reload data
+    loadData();
+  }
 });
 
 // Chart configurations
@@ -497,19 +563,17 @@ const toggleShowAll = () => {
 
             <v-col cols="12" sm="6" md="4">
               <USDatePicker
-                :model-value="dateFrom"
+                v-model="dateFrom"
                 label="Start Date"
                 prepend-inner-icon="mdi-calendar-start"
-                @update:model-value="(value: string | null) => { dateFrom = value; onDateChange(); }"
               />
             </v-col>
 
             <v-col cols="12" sm="6" md="4">
               <USDatePicker
-                :model-value="dateTo"
+                v-model="dateTo"
                 label="End Date"
                 prepend-inner-icon="mdi-calendar-end"
-                @update:model-value="(value: string | null) => { dateTo = value; onDateChange(); }"
               />
             </v-col>
           </v-row>

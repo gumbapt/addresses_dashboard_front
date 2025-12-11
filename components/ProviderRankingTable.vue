@@ -412,11 +412,11 @@ const {
   changeLocalSort
 } = useProviderRankings();
 
-// Local filters for UI - initialize from URL query params
+// Local filters for UI - initialize from URL query params (prefixed for provider-ranking tab)
 const localFilters = ref<ProviderRankingFilters>({ 
   ...filters.value,
-  date_from: (route.query.date_from as string) || null,
-  date_to: (route.query.date_to as string) || null
+  date_from: (route.query.provider_date_from as string) || (route.query.date_from as string) || null,
+  date_to: (route.query.provider_date_to as string) || (route.query.date_to as string) || null
 });
 
 // Provider options - dynamically populated from availableProviders
@@ -468,15 +468,25 @@ const getSelectedProviderName = () => {
   return provider ? provider.name : '';
 };
 
-// Update URL query parameters
+// Update URL query parameters (prefixed for provider-ranking tab)
 const updateURL = () => {
   const query: Record<string, string> = {};
   
+  // Preserve other query params that might exist
+  const currentQuery = route.query;
+  Object.keys(currentQuery).forEach(key => {
+    // Only preserve params that are not related to provider-ranking
+    if (!key.startsWith('provider_') && key !== 'date_from' && key !== 'date_to') {
+      query[key] = currentQuery[key] as string;
+    }
+  });
+  
+  // Add provider-ranking specific params with prefix
   if (localFilters.value.date_from) {
-    query.date_from = localFilters.value.date_from;
+    query.provider_date_from = localFilters.value.date_from;
   }
   if (localFilters.value.date_to) {
-    query.date_to = localFilters.value.date_to;
+    query.provider_date_to = localFilters.value.date_to;
   }
   
   navigateTo({
@@ -619,12 +629,15 @@ const getTechColor = (technology: string) => {
   return techMap[technology] || 'grey';
 };
 
-// Watch for URL query parameter changes
+// Watch for URL query parameter changes (prefixed for provider-ranking tab)
 watch(() => route.query, (newQuery) => {
-  if (newQuery.date_from !== localFilters.value.date_from || 
-      newQuery.date_to !== localFilters.value.date_to) {
-    localFilters.value.date_from = (newQuery.date_from as string) || null;
-    localFilters.value.date_to = (newQuery.date_to as string) || null;
+  const newDateFrom = (newQuery.provider_date_from as string) || (newQuery.date_from as string) || null;
+  const newDateTo = (newQuery.provider_date_to as string) || (newQuery.date_to as string) || null;
+  
+  if (newDateFrom !== localFilters.value.date_from || 
+      newDateTo !== localFilters.value.date_to) {
+    localFilters.value.date_from = newDateFrom;
+    localFilters.value.date_to = newDateTo;
     updateFilters(localFilters.value);
     loadProviderRankings();
   }
