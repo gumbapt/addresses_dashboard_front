@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import { useRoute } from 'vue-router';
 import UiParentCard from '@/components/shared/UiParentCard.vue';
 import UiChildCard from '@/components/shared/UiChildCard.vue';
 import ProviderRankingTable from '@/components/ProviderRankingTable.vue';
@@ -60,6 +59,20 @@ const selectedReportId = ref<number | string>('all');
 const showAllReports = ref(false);
 const selectedStateId = ref<number | null>(null);
 
+// Period and date filters for Domain Dashboard tab
+const domainDashboardPeriod = ref<'today' | 'yesterday' | 'last_week' | 'last_month' | 'last_year' | 'all_time' | null>(null);
+const domainDashboardDateFrom = ref<string | null>(null);
+const domainDashboardDateTo = ref<string | null>(null);
+
+const domainDashboardPeriodOptions = [
+  { title: '📅 Today', value: 'today' },
+  { title: '📅 Yesterday', value: 'yesterday' },
+  { title: '📅 Last Week', value: 'last_week' },
+  { title: '📅 Last Month', value: 'last_month' },
+  { title: '📅 Last Year', value: 'last_year' },
+  { title: '📅 All Time', value: 'all_time' }
+];
+
 // Sort options
 const sortOptions = [
   { value: 'score', label: 'Overall Score' },
@@ -89,6 +102,17 @@ onMounted(() => {
   }
   if (route.query.state_date_to) {
     updateStateRankingFilters({ date_to: route.query.state_date_to as string });
+  }
+  
+  // Initialize date filters from URL for domain dashboard
+  if (route.query.domain_dashboard_date_from) {
+    domainDashboardDateFrom.value = route.query.domain_dashboard_date_from as string;
+  }
+  if (route.query.domain_dashboard_date_to) {
+    domainDashboardDateTo.value = route.query.domain_dashboard_date_to as string;
+  }
+  if (route.query.domain_dashboard_period) {
+    domainDashboardPeriod.value = route.query.domain_dashboard_period as any;
   }
 });
 
@@ -131,11 +155,144 @@ const reportSelectOptions = computed(() => {
 watch(selectedDomainId, async (newDomainId) => {
   if (newDomainId) {
     await loadReports({ domain_id: newDomainId, per_page: 100 });
-    await loadAggregatedStats(newDomainId);
+    await loadDomainDashboardData();
     selectedReportId.value = 'all';
     showAllReports.value = false;
   }
 });
+
+// Watch for domain dashboard date changes
+watch([domainDashboardDateFrom, domainDashboardDateTo], () => {
+  if (selectedDomainId.value && selectedReportId.value === 'all' && currentTab.value === 'domain-dashboard') {
+    onDomainDashboardDateChange();
+  }
+});
+
+// Calculate date range from period for Domain Dashboard
+const calculateDomainDashboardDateRange = (period: string | null): { date_from: string | null; date_to: string | null } => {
+  if (!period || period === 'all_time') {
+    return { date_from: null, date_to: null };
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  let dateFrom: Date;
+  let dateTo: Date = new Date(today);
+
+  switch (period) {
+    case 'today':
+      dateFrom = new Date(today);
+      dateTo = new Date(today);
+      break;
+    
+    case 'yesterday':
+      dateFrom = new Date(today);
+      dateFrom.setDate(dateFrom.getDate() - 1);
+      dateTo = new Date(dateFrom);
+      break;
+    
+    case 'last_week':
+      dateFrom = new Date(today);
+      dateFrom.setDate(dateFrom.getDate() - 6);
+      break;
+    
+    case 'last_month':
+      dateFrom = new Date(today);
+      dateFrom.setDate(dateFrom.getDate() - 29);
+      break;
+    
+    case 'last_year':
+      dateFrom = new Date(today);
+      dateFrom.setDate(dateFrom.getDate() - 364);
+      break;
+    
+    default:
+      return { date_from: null, date_to: null };
+  }
+
+  const formatDate = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  return {
+    date_from: formatDate(dateFrom),
+    date_to: formatDate(dateTo)
+  };
+};
+
+// Update URL for Domain Dashboard filters
+const updateDomainDashboardURL = () => {
+  const query: Record<string, string> = {};
+  
+  // Preserve other query params
+  const currentQuery = route.query;
+  Object.keys(currentQuery).forEach(key => {
+    if (!key.startsWith('domain_dashboard_') && key !== 'domain_date_from' && key !== 'domain_date_to' && key !== 'domain_period') {
+      query[key] = currentQuery[key] as string;
+    }
+  });
+  
+  // Add domain dashboard specific params
+  if (domainDashboardDateFrom.value) {
+    query.domain_dashboard_date_from = domainDashboardDateFrom.value;
+  }
+  if (domainDashboardDateTo.value) {
+    query.domain_dashboard_date_to = domainDashboardDateTo.value;
+  }
+  if (domainDashboardPeriod.value) {
+    query.domain_dashboard_period = domainDashboardPeriod.value;
+  }
+  
+  navigateTo({
+    query: Object.keys(query).length > 0 ? query : {}
+  }, { replace: true });
+};
+
+// Handle period change for Domain Dashboard
+const onDomainDashboardPeriodChange = () => {
+  if (domainDashboardPeriod.value) {
+    const dateRange = calculateDomainDashboardDateRange(domainDashboardPeriod.value);
+    domainDashboardDateFrom.value = dateRange.date_from;
+    domainDashboardDateTo.value = dateRange.date_to;
+  } else {
+    domainDashboardDateFrom.value = null;
+    domainDashboardDateTo.value = null;
+  }
+  updateDomainDashboardURL();
+  loadDomainDashboardData();
+};
+
+// Handle date change for Domain Dashboard
+const onDomainDashboardDateChange = () => {
+  if (domainDashboardDateFrom.value || domainDashboardDateTo.value) {
+    domainDashboardPeriod.value = null;
+  } else {
+    domainDashboardPeriod.value = null;
+  }
+  updateDomainDashboardURL();
+  loadDomainDashboardData();
+};
+
+// Load Domain Dashboard data
+const loadDomainDashboardData = async () => {
+  if (!selectedDomainId.value) return;
+  
+  if (selectedReportId.value === 'all') {
+    showAllReports.value = false;
+    await loadAggregatedStats(selectedDomainId.value, {
+      period: domainDashboardPeriod.value,
+      date_from: domainDashboardDateFrom.value,
+      date_to: domainDashboardDateTo.value
+    });
+  } else if (selectedReportId.value) {
+    showAllReports.value = false;
+    await loadDashboardStats(selectedReportId.value as number);
+  }
+};
 
 // Watch para carregar dados quando report mudar
 watch(selectedReportId, async (newId) => {
@@ -143,7 +300,7 @@ watch(selectedReportId, async (newId) => {
   
   if (newId === 'all') {
     showAllReports.value = false;
-    await loadAggregatedStats(selectedDomainId.value);
+    await loadDomainDashboardData();
   } else if (newId) {
     showAllReports.value = false;
     await loadDashboardStats(newId as number);
@@ -965,6 +1122,48 @@ const getTechColor = (technology: string | null) => {
               </v-col>
             </v-row>
           </UiParentCard>
+        </v-col>
+      </v-row>
+
+      <!-- Period and Date Filters (only when "All Reports Combined" is selected) -->
+      <v-row v-if="selectedDomainId && selectedReportId === 'all'" class="mb-4">
+        <v-col cols="12">
+          <v-card variant="outlined" class="pa-3">
+            <div class="text-caption text-medium-emphasis mb-2">
+              <v-icon size="small" class="mr-1">mdi-filter</v-icon>
+              Filter by Period or Date Range
+            </div>
+            <v-row>
+              <v-col cols="12" md="3">
+                <v-select
+                  v-model="domainDashboardPeriod"
+                  :items="domainDashboardPeriodOptions"
+                  label="Period"
+                  clearable
+                  variant="outlined"
+                  density="compact"
+                  prepend-inner-icon="mdi-calendar-range"
+                  @update:model-value="onDomainDashboardPeriodChange"
+                />
+              </v-col>
+
+              <v-col cols="12" sm="6" md="4">
+                <USDatePicker
+                  v-model="domainDashboardDateFrom"
+                  label="Start Date"
+                  prepend-inner-icon="mdi-calendar-start"
+                />
+              </v-col>
+
+              <v-col cols="12" sm="6" md="4">
+                <USDatePicker
+                  v-model="domainDashboardDateTo"
+                  label="End Date"
+                  prepend-inner-icon="mdi-calendar-end"
+                />
+              </v-col>
+            </v-row>
+          </v-card>
         </v-col>
       </v-row>
 
