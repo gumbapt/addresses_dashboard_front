@@ -507,9 +507,9 @@ const formatDecimal = (num: number): string => {
   return num.toFixed(2);
 };
 
-// Back to domains list
+// Back to Analytics
 const goBack = () => {
-  navigateTo('/dashboard?tab=state-ranking');
+  navigateTo('/analytics');
 };
 </script>
 
@@ -526,7 +526,7 @@ const goBack = () => {
               @click="goBack"
               class="mb-2"
             >
-              Back to State Ranking
+              Back to Analytics
             </v-btn>
             <h1 class="text-h4 font-weight-bold">
               {{ currentDomain?.name || 'Domain' }} - {{ currentState?.name || 'State' }} ({{ currentState?.code }})
