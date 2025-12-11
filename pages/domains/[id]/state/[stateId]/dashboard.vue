@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import UiParentCard from '@/components/shared/UiParentCard.vue';
+import USDatePicker from '@/components/USDatePicker.vue';
 
 // Define middleware
 definePageMeta({
@@ -29,10 +29,11 @@ const { states: allStates, fetchStates } = useStates();
 
 // States
 const selectedPeriod = ref<'today' | 'yesterday' | 'last_week' | 'last_month' | 'last_year' | 'all_time' | null>('last_month');
-const dateFrom = ref<string>('');
-const dateTo = ref<string>('');
+const dateFrom = ref<string | null>(null);
+const dateTo = ref<string | null>(null);
 const sortBy = ref<'total_count' | 'total_requests' | 'success_rate' | 'avg_speed'>('total_count');
 const citiesLimit = ref<number>(10);
+const isUpdatingFilters = ref(false);
 
 // Domain info
 const currentDomain = computed(() => {
@@ -46,16 +47,169 @@ const currentState = computed(() => {
   return allStates.value.find((s: any) => s.id === stateId.value);
 });
 
+// Calculate date range from period
+const calculateDateRangeFromPeriod = (period: string | null): { date_from: string | null; date_to: string | null } => {
+  if (!period) return { date_from: null, date_to: null };
+  
+  const today = new Date();
+  today.setHours(23, 59, 59, 999); // End of today
+  const dateTo = new Date(today);
+  let dateFrom = new Date(today);
+  
+  switch (period) {
+    case 'today':
+      dateFrom.setHours(0, 0, 0, 0);
+      break;
+    
+    case 'yesterday':
+      dateFrom.setDate(dateFrom.getDate() - 1);
+      dateFrom.setHours(0, 0, 0, 0);
+      dateTo.setDate(dateTo.getDate() - 1);
+      dateTo.setHours(23, 59, 59, 999);
+      break;
+    
+    case 'last_week':
+      dateFrom.setDate(dateFrom.getDate() - 6); // Last 7 days (including today)
+      break;
+    
+    case 'last_month':
+      dateFrom.setDate(dateFrom.getDate() - 29); // Last 30 days (including today)
+      break;
+    
+    case 'last_year':
+      dateFrom.setDate(dateFrom.getDate() - 364); // Last 365 days (including today)
+      break;
+    
+    default:
+      return { date_from: null, date_to: null };
+  }
+  
+  // Format to ISO (YYYY-MM-DD)
+  const formatDate = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  
+  return {
+    date_from: formatDate(dateFrom),
+    date_to: formatDate(dateTo)
+  };
+};
+
+// Update URL query parameters
+const updateURL = () => {
+  const query: Record<string, string> = {};
+  
+  // Preserve other query params
+  const currentQuery = route.query;
+  Object.keys(currentQuery).forEach(key => {
+    if (key !== 'period' && key !== 'date_from' && key !== 'date_to') {
+      query[key] = currentQuery[key] as string;
+    }
+  });
+  
+  // Add filter params
+  if (selectedPeriod.value) {
+    query.period = selectedPeriod.value;
+  }
+  if (dateFrom.value) {
+    query.date_from = dateFrom.value;
+  }
+  if (dateTo.value) {
+    query.date_to = dateTo.value;
+  }
+  
+  // Only navigate if query actually changed
+  const currentPeriod = currentQuery.period as string;
+  const currentDateFrom = currentQuery.date_from as string;
+  const currentDateTo = currentQuery.date_to as string;
+  
+  if (
+    query.period !== currentPeriod ||
+    query.date_from !== currentDateFrom ||
+    query.date_to !== currentDateTo
+  ) {
+    navigateTo({
+      query: Object.keys(query).length > 0 ? query : {}
+    }, { replace: true });
+  }
+};
+
+// Handle period change
+const onPeriodChange = async () => {
+  if (isUpdatingFilters.value) return;
+  
+  isUpdatingFilters.value = true;
+  
+  try {
+    if (selectedPeriod.value) {
+      const dateRange = calculateDateRangeFromPeriod(selectedPeriod.value);
+      dateFrom.value = dateRange.date_from;
+      dateTo.value = dateRange.date_to;
+    } else {
+      dateFrom.value = null;
+      dateTo.value = null;
+    }
+    await nextTick();
+    updateURL();
+    await loadStats();
+  } finally {
+    setTimeout(() => {
+      isUpdatingFilters.value = false;
+    }, 100);
+  }
+};
+
+// Handle date change
+const onDateChange = async () => {
+  if (isUpdatingFilters.value) return;
+  
+  isUpdatingFilters.value = true;
+  
+  try {
+    // Clear period when custom dates are selected
+    if (dateFrom.value || dateTo.value) {
+      selectedPeriod.value = null;
+    } else {
+      selectedPeriod.value = null;
+    }
+    await nextTick();
+    updateURL();
+    await loadStats();
+  } finally {
+    setTimeout(() => {
+      isUpdatingFilters.value = false;
+    }, 100);
+  }
+};
+
 // Load data
 onMounted(async () => {
   await loadDomains();
   await fetchStates();
+  
+  // Initialize filters from URL
+  selectedPeriod.value = (route.query.period as typeof selectedPeriod.value) || 'last_month';
+  dateFrom.value = (route.query.date_from as string) || null;
+  dateTo.value = (route.query.date_to as string) || null;
+  
+  // If period is set but dates are not, calculate dates from period
+  if (selectedPeriod.value && !dateFrom.value && !dateTo.value) {
+    const dateRange = calculateDateRangeFromPeriod(selectedPeriod.value);
+    dateFrom.value = dateRange.date_from;
+    dateTo.value = dateRange.date_to;
+  }
+  
   await loadStats();
 });
 
-// Watch for filter changes
-watch([selectedPeriod, dateFrom, dateTo, sortBy, citiesLimit], () => {
-  loadStats();
+// Watch for filter changes (excluding period and dates to avoid loops)
+watch([sortBy, citiesLimit], () => {
+  if (!isUpdatingFilters.value) {
+    loadStats();
+  }
 });
 
 const loadStats = async () => {
@@ -395,42 +549,43 @@ const goBack = () => {
               <v-select
                 v-model="selectedPeriod"
                 :items="[
-                  { value: 'today', title: 'Today' },
-                  { value: 'yesterday', title: 'Yesterday' },
-                  { value: 'last_week', title: 'Last Week' },
-                  { value: 'last_month', title: 'Last Month' },
-                  { value: 'last_year', title: 'Last Year' },
-                  { value: 'all_time', title: 'All Time' }
+                  { value: 'today', title: '📅 Today' },
+                  { value: 'yesterday', title: '📅 Yesterday' },
+                  { value: 'last_week', title: '📅 Last Week' },
+                  { value: 'last_month', title: '📅 Last Month' },
+                  { value: 'last_year', title: '📅 Last Year' },
+                  { value: 'all_time', title: '📅 All Time' }
                 ]"
                 label="Period"
                 variant="outlined"
                 density="compact"
-                prepend-inner-icon="mdi-calendar"
-                @update:model-value="() => { dateFrom = ''; dateTo = ''; }"
+                prepend-inner-icon="mdi-calendar-range"
+                clearable
+                @update:model-value="onPeriodChange"
               />
             </v-col>
-            <v-col cols="12" md="2">
-              <v-text-field
-                v-model="dateFrom"
-                label="Date From"
-                type="date"
-                variant="outlined"
-                density="compact"
-                clearable
+            <v-col cols="12" md="4">
+              <USDatePicker
+                :model-value="dateFrom"
+                label="Start Date"
                 prepend-inner-icon="mdi-calendar-start"
-                @update:model-value="() => { if (dateFrom && dateTo) selectedPeriod = null; }"
+                @update:model-value="async (value: string | null) => { 
+                  dateFrom = value; 
+                  await nextTick();
+                  onDateChange();
+                }"
               />
             </v-col>
-            <v-col cols="12" md="2">
-              <v-text-field
-                v-model="dateTo"
-                label="Date To"
-                type="date"
-                variant="outlined"
-                density="compact"
-                clearable
+            <v-col cols="12" md="4">
+              <USDatePicker
+                :model-value="dateTo"
+                label="End Date"
                 prepend-inner-icon="mdi-calendar-end"
-                @update:model-value="() => { if (dateFrom && dateTo) selectedPeriod = null; }"
+                @update:model-value="async (value: string | null) => { 
+                  dateTo = value; 
+                  await nextTick();
+                  onDateChange();
+                }"
               />
             </v-col>
             <v-col cols="12" md="3">
