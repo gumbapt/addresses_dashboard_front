@@ -9,6 +9,9 @@ dist
 
 # Node dependencies
 node_modules
+# Exception: allow .output/server/node_modules for deployment (required for server build)
+!.output/server/node_modules/
+!.output/server/node_modules/**/*
 
 # Logs
 logs
