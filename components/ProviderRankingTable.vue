@@ -117,51 +117,21 @@
           </div>
           <v-row>
             <v-col cols="12" sm="6" md="4">
-              <v-text-field
-                v-model="localFilters.date_from"
-                label="Data de Início"
-                type="date"
-                variant="outlined"
-                density="compact"
-                clearable
+              <USDatePicker
+                :model-value="localFilters.date_from || null"
+                label="Start Date"
                 prepend-inner-icon="mdi-calendar-start"
-                @update:model-value="onDateChange"
+                @update:model-value="(value) => { localFilters.date_from = value; onDateChange(); }"
               />
             </v-col>
 
             <v-col cols="12" sm="6" md="4">
-              <v-text-field
-                v-model="localFilters.date_to"
-                label="Data de Fim"
-                type="date"
-                variant="outlined"
-                density="compact"
-                clearable
+              <USDatePicker
+                :model-value="localFilters.date_to || null"
+                label="End Date"
                 prepend-inner-icon="mdi-calendar-end"
-                @update:model-value="onDateChange"
+                @update:model-value="(value) => { localFilters.date_to = value; onDateChange(); }"
               />
-            </v-col>
-            <v-col cols="12" md="4" class="d-flex align-center">
-              <v-alert
-                v-if="localFilters.date_from || localFilters.date_to"
-                type="info"
-                variant="tonal"
-                density="compact"
-                class="mb-0"
-              >
-                <div class="text-caption">
-                  <v-icon size="small" class="mr-1">mdi-information</v-icon>
-                  <span v-if="localFilters.date_from && localFilters.date_to">
-                    Período: {{ formatDate(localFilters.date_from) }} até {{ formatDate(localFilters.date_to) }}
-                  </span>
-                  <span v-else-if="localFilters.date_from">
-                    A partir de: {{ formatDate(localFilters.date_from) }}
-                  </span>
-                  <span v-else-if="localFilters.date_to">
-                    Até: {{ formatDate(localFilters.date_to) }}
-                  </span>
-                </div>
-              </v-alert>
             </v-col>
           </v-row>
         </v-card>
@@ -583,21 +553,6 @@ const getTechColor = (technology: string) => {
     'Unknown': 'grey'
   };
   return techMap[technology] || 'grey';
-};
-
-// Helper function to format date for display
-const formatDate = (dateString: string | null): string => {
-  if (!dateString) return '';
-  try {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    });
-  } catch (e) {
-    return dateString;
-  }
 };
 
 // Watch for URL query parameter changes

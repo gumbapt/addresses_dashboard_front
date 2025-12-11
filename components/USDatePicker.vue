@@ -1,29 +1,43 @@
 <template>
-  <div class="us-date-picker-wrapper">
-    <v-text-field
-      :model-value="isoValue"
-      :label="label"
-      type="date"
-      :variant="variant"
-      :density="density"
-      :clearable="clearable"
-      :prepend-inner-icon="prependInnerIcon"
-      :disabled="disabled"
-      :required="required"
-      :hint="hint"
-      :persistent-hint="persistentHint"
-      @update:model-value="handleDateChange"
-      @click:clear="handleClear"
-      class="us-date-picker-field"
+  <v-menu
+    v-model="menu"
+    :close-on-content-click="false"
+    transition="scale-transition"
+    offset-y
+    min-width="auto"
+  >
+    <template v-slot:activator="{ props: menuProps }">
+      <v-text-field
+        :model-value="displayValue"
+        :label="label"
+        :variant="variant"
+        :density="density"
+        :clearable="clearable"
+        :prepend-inner-icon="prependInnerIcon"
+        :append-inner-icon="'mdi-calendar'"
+        :disabled="disabled"
+        :required="required"
+        :hint="hint"
+        :persistent-hint="persistentHint"
+        readonly
+        v-bind="menuProps"
+        @click:clear="handleClear"
+        @click:append-inner="menu = true"
+        @click="menu = true"
+        class="us-date-picker-field"
+      />
+    </template>
+    <v-date-picker
+      v-model="datePickerValue"
+      locale="en"
+      :first-day-of-week="0"
+      @update:model-value="handleDateSelect"
     />
-    <div v-if="isoValue" class="us-date-display">
-      {{ formatDateUS(isoValue) }}
-    </div>
-  </div>
+  </v-menu>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 
 interface Props {
   modelValue: string | null;
@@ -53,84 +67,72 @@ const emit = defineEmits<{
   'update:modelValue': [value: string | null];
 }>();
 
-// ISO value for the date input (YYYY-MM-DD)
-const isoValue = computed({
+const menu = ref(false);
+const datePickerValue = computed({
   get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value)
+  set: (value) => {
+    emit('update:modelValue', value);
+  }
 });
 
 // Format date to US format (MM/DD/YYYY) for display
-const formatDateUS = (isoDate: string): string => {
-  if (!isoDate) return '';
+const formatDateUS = (value: string | null | Date | any): string => {
+  if (!value) return '';
   try {
-    const [year, month, day] = isoDate.split('-');
-    if (year && month && day) {
+    let dateStr: string = '';
+    
+    // Handle Date objects
+    if (value instanceof Date) {
+      const year = value.getFullYear();
+      const month = String(value.getMonth() + 1).padStart(2, '0');
+      const day = String(value.getDate()).padStart(2, '0');
       return `${month}/${day}/${year}`;
     }
-    return isoDate;
+    
+    // Handle string values
+    if (typeof value === 'string') {
+      // If it contains GMT or looks like a date string, parse it
+      if (value.includes('GMT') || value.includes('T') || value.length > 10) {
+        const date = new Date(value);
+        if (!isNaN(date.getTime())) {
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          return `${month}/${day}/${year}`;
+        }
+        return '';
+      }
+      // Handle ISO format (YYYY-MM-DD)
+      const [year, month, day] = value.split('-');
+      if (year && month && day && year.length === 4) {
+        return `${month}/${day}/${year}`;
+      }
+      return value;
+    }
+    
+    return '';
   } catch (e) {
-    return isoDate;
+    return '';
   }
 };
 
-// Handle date change from the date picker
-const handleDateChange = (value: string | null) => {
-  isoValue.value = value;
+// Display value in US format
+const displayValue = computed(() => {
+  if (!props.modelValue) return '';
+  const formatted = formatDateUS(props.modelValue);
+  return formatted || '';
+});
+
+// Handle date selection from picker
+const handleDateSelect = (value: string | null) => {
+  datePickerValue.value = value;
+  menu.value = false;
 };
 
 // Handle clear button
 const handleClear = () => {
-  isoValue.value = null;
+  datePickerValue.value = null;
+  emit('update:modelValue', null);
 };
 </script>
-
-<style scoped>
-.us-date-picker-wrapper {
-  position: relative;
-}
-
-.us-date-picker-field {
-  position: relative;
-}
-
-.us-date-display {
-  position: absolute;
-  left: 56px;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
-  color: rgba(var(--v-theme-on-surface), 0.87);
-  font-size: 0.875rem;
-  z-index: 1;
-  background: rgba(var(--v-theme-surface), 1);
-  padding: 0 2px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  line-height: 1.5;
-  white-space: nowrap;
-  font-weight: 400;
-  margin-top: 1px;
-}
-
-.us-date-picker-field :deep(.v-field__input) {
-  position: relative;
-}
-
-.us-date-picker-field :deep(input[type="date"]) {
-  color: transparent !important;
-  caret-color: rgba(var(--v-theme-on-surface), 0.87);
-}
-
-.us-date-picker-field :deep(input[type="date"]:focus) {
-  color: transparent !important;
-}
-
-.us-date-picker-field :deep(input[type="date"]::-webkit-calendar-picker-indicator) {
-  cursor: pointer;
-  z-index: 2;
-  position: relative;
-  opacity: 1;
-}
-</style>
 
