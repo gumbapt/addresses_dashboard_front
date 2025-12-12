@@ -1651,7 +1651,6 @@ const technologyDistributionTable = computed(() => {
                     <th class="text-left">Technology</th>
                     <th class="text-right">Total Requests</th>
                     <th class="text-center">Percentage</th>
-                    <th class="text-right">Avg Speed</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1678,7 +1677,6 @@ const technologyDistributionTable = computed(() => {
                         {{ formatPercentage(provider.percentage) }}
                       </v-chip>
                     </td>
-                    <td class="text-right">{{ provider.avg_speed.toFixed(0) }} ms</td>
                   </tr>
                 </tbody>
               </v-table>
