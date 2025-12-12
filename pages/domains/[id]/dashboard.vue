@@ -467,6 +467,147 @@ const formatDecimal = (num: number): string => {
   return num.toFixed(2);
 };
 
+// Get technology color
+const getTechColor = (technology: string | null): string => {
+  const techMap: Record<string, string> = {
+    'Fiber': 'blue',
+    'Cable': 'green',
+    'DSL': 'orange',
+    'Mobile': 'purple',
+    'Satellite': 'red'
+  };
+  return technology ? techMap[technology] || 'grey' : 'grey';
+};
+
+// Computed for Provider Distribution table (sorted by percentage, highest to lowest)
+const providerDistributionTable = computed(() => {
+  // Dados agregados
+  if (aggregatedData.value?.providers && Array.isArray(aggregatedData.value.providers)) {
+    const providers = [...aggregatedData.value.providers];
+    const totalRequests = providers.reduce((sum, p) => sum + p.total_count, 0);
+    
+    return providers
+      .map(p => ({
+        provider_id: p.provider_id,
+        name: p.name,
+        technology: p.technology || 'Unknown',
+        total_count: p.total_count,
+        percentage: totalRequests > 0 ? (p.total_count / totalRequests) * 100 : 0,
+        avg_success_rate: p.avg_success_rate,
+        avg_speed: p.avg_speed
+      }))
+      .sort((a, b) => b.percentage - a.percentage);
+  }
+  
+  // Dados de report individual
+  if (reportData.value?.raw_data?.providers?.top_providers && Array.isArray(reportData.value.raw_data.providers.top_providers)) {
+    const providers = [...reportData.value.raw_data.providers.top_providers];
+    const totalRequests = providers.reduce((sum: number, p: any) => sum + (p.total_count || 0), 0);
+    
+    return providers
+      .map((p: any) => ({
+        provider_id: p.provider_id || p.id,
+        name: p.name,
+        technology: p.technology || 'Unknown',
+        total_count: p.total_count || 0,
+        percentage: totalRequests > 0 ? ((p.total_count || 0) / totalRequests) * 100 : 0,
+        avg_success_rate: p.avg_success_rate || 0,
+        avg_speed: p.avg_speed || 0
+      }))
+      .sort((a, b) => b.percentage - a.percentage);
+  }
+  
+  return [];
+});
+
+// Computed for Technology Distribution table (sorted by percentage, highest to lowest)
+const technologyDistributionTable = computed(() => {
+  // Dados agregados - primeiro tentar usar technology_distribution direto se existir
+  if (aggregatedData.value) {
+    const directTechDist = (aggregatedData.value as any).technology_distribution;
+    if (directTechDist && Array.isArray(directTechDist) && directTechDist.length > 0) {
+      const technologies = [...directTechDist];
+      const totalRequests = technologies.reduce((sum: number, t: any) => sum + (t.count || t.total_count || 0), 0);
+      
+      return technologies
+        .map((t: any) => {
+          const count = t.count || t.total_count || 0;
+          return {
+            technology: t.technology || t.tech || t.name || 'Unknown',
+            total_count: count,
+            percentage: totalRequests > 0 ? (count / totalRequests) * 100 : 0
+          };
+        })
+        .sort((a, b) => b.percentage - a.percentage);
+    }
+    
+    // Fallback: calcular a partir dos providers
+    if (aggregatedData.value.providers && Array.isArray(aggregatedData.value.providers)) {
+      const techMap = new Map<string, number>();
+      
+      aggregatedData.value.providers.forEach(p => {
+        if (p.technology) {
+          const current = techMap.get(p.technology) || 0;
+          techMap.set(p.technology, current + (p.total_count || 0));
+        }
+      });
+      
+      if (techMap.size > 0) {
+        const totalRequests = Array.from(techMap.values()).reduce((sum, count) => sum + count, 0);
+        
+        return Array.from(techMap.entries())
+          .map(([technology, count]) => ({
+            technology,
+            total_count: count,
+            percentage: totalRequests > 0 ? (count / totalRequests) * 100 : 0
+          }))
+          .sort((a, b) => b.percentage - a.percentage);
+      }
+    }
+  }
+  
+  // Dados de report individual
+  if (reportData.value?.raw_data) {
+    // Tentar technology_metrics.distribution
+    const techMetrics = reportData.value.raw_data.technology_metrics;
+    if (techMetrics?.distribution && Array.isArray(techMetrics.distribution)) {
+      const technologies = [...techMetrics.distribution];
+      const totalRequests = technologies.reduce((sum: number, t: any) => sum + (t.count || t.total_count || 0), 0);
+      
+      return technologies
+        .map((t: any) => {
+          const count = t.count || t.total_count || 0;
+          return {
+            technology: t.technology || t.tech || t.name || 'Unknown',
+            total_count: count,
+            percentage: totalRequests > 0 ? (count / totalRequests) * 100 : 0
+          };
+        })
+        .sort((a, b) => b.percentage - a.percentage);
+    }
+    
+    // Tentar technology_distribution
+    const techDist = reportData.value.raw_data.technology_distribution;
+    if (techDist && Array.isArray(techDist) && techDist.length > 0) {
+      const technologies = [...techDist];
+      const totalRequests = technologies.reduce((sum: number, t: any) => sum + (t.count || t.total_count || 0), 0);
+      
+      return technologies
+        .map((t: any) => {
+          const count = t.count || t.total_count || 0;
+          return {
+            technology: t.technology || t.tech || t.name || 'Unknown',
+            total_count: count,
+            percentage: totalRequests > 0 ? (count / totalRequests) * 100 : 0
+          };
+        })
+        .sort((a, b) => b.percentage - a.percentage);
+    }
+  }
+  
+  return [];
+});
+
 // Back to domains list
 const goBack = () => {
   navigateTo('/domains');
@@ -787,6 +928,52 @@ const toggleShowAll = () => {
           </v-col>
         </v-row>
 
+        <!-- Provider Distribution Table -->
+        <v-row class="mb-4" v-if="providerDistributionTable.length > 0">
+          <v-col cols="12">
+            <UiParentCard title="Provider Distribution Details">
+              <v-table>
+                <thead>
+                  <tr>
+                    <th class="text-left">Provider</th>
+                    <th class="text-left">Technology</th>
+                    <th class="text-right">Total Requests</th>
+                    <th class="text-center">Percentage</th>
+                    <th class="text-right">Avg Speed</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="provider in providerDistributionTable" :key="provider.provider_id">
+                    <td class="font-weight-medium">{{ provider.name }}</td>
+                    <td>
+                      <v-chip
+                        :color="getTechColor(provider.technology)"
+                        variant="tonal"
+                        size="small"
+                      >
+                        {{ provider.technology }}
+                      </v-chip>
+                    </td>
+                    <td class="text-right font-weight-medium">
+                      {{ formatNumber(provider.total_count) }}
+                    </td>
+                    <td class="text-center">
+                      <v-chip
+                        :color="provider.percentage >= 20 ? 'success' : provider.percentage >= 10 ? 'info' : 'default'"
+                        variant="tonal"
+                        size="small"
+                      >
+                        {{ formatPercentage(provider.percentage) }}
+                      </v-chip>
+                    </td>
+                    <td class="text-right">{{ provider.avg_speed.toFixed(0) }} ms</td>
+                  </tr>
+                </tbody>
+              </v-table>
+            </UiParentCard>
+          </v-col>
+        </v-row>
+
         <!-- Charts Row 2 -->
         <v-row>
           <!-- Average Speed by State -->
@@ -822,6 +1009,48 @@ const toggleShowAll = () => {
                 <v-icon size="64" color="grey">mdi-chart-donut</v-icon>
                 <p class="text-h6 mt-4 text-medium-emphasis">No technology data available</p>
               </div>
+            </UiParentCard>
+          </v-col>
+        </v-row>
+
+        <!-- Technology Distribution Table -->
+        <v-row class="mb-4" v-if="technologyDistributionTable.length > 0">
+          <v-col cols="12">
+            <UiParentCard title="Technology Distribution Details">
+              <v-table>
+                <thead>
+                  <tr>
+                    <th class="text-left">Technology</th>
+                    <th class="text-right">Total Requests</th>
+                    <th class="text-center">Percentage</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(tech, index) in technologyDistributionTable" :key="index">
+                    <td>
+                      <v-chip
+                        :color="getTechColor(tech.technology)"
+                        variant="tonal"
+                        size="small"
+                      >
+                        {{ tech.technology }}
+                      </v-chip>
+                    </td>
+                    <td class="text-right font-weight-medium">
+                      {{ formatNumber(tech.total_count) }}
+                    </td>
+                    <td class="text-center">
+                      <v-chip
+                        :color="tech.percentage >= 30 ? 'success' : tech.percentage >= 15 ? 'info' : 'default'"
+                        variant="tonal"
+                        size="small"
+                      >
+                        {{ formatPercentage(tech.percentage) }}
+                      </v-chip>
+                    </td>
+                  </tr>
+                </tbody>
+              </v-table>
             </UiParentCard>
           </v-col>
         </v-row>
