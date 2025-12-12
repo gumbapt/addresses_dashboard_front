@@ -1,1 +1,0 @@
-import{aa as n,u as r,ab as h,n as s}from"./AmEn0FOG.js";const l=n(async(t,c)=>{let a,e;const{checkAuth:i}=r(),u=([a,e]=h(()=>i()),a=await a,e(),a);if(!u&&t.path!=="/auth/login"&&t.path!=="/auth/register")return s("/auth/login");if(u&&(t.path==="/auth/login"||t.path==="/auth/register"))return s("/analytics")});export{l as default};

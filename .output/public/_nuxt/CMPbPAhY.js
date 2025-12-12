@@ -1,0 +1,1 @@
+import{_ as o,r as t,h as a,b as _,w as c,a as s,ad as r}from"./CsriCXU6.js";const p={};function l(f,m){const e=r,n=t("v-app");return _(),a(n,null,{default:c(()=>[s(e)]),_:1})}const d=o(p,[["render",l]]);export{d as default};
