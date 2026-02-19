@@ -26,6 +26,7 @@ const {
 } = useDomainDashboard();
 const { formattedReports, loading: reportsLoading, loadReports } = useReports();
 const { domains: allDomains, loadDomains } = useDomains();
+const { filterResidential, filterBusiness, reportFilterParams, filterLabel } = useReportFilter();
 
 // States
 const selectedReportId = ref<number | string>('all');
@@ -217,21 +218,28 @@ const onDateChange = () => {
 
 // Load data function
 const loadData = async () => {
+  const filter = reportFilterParams.value;
   if (selectedReportId.value === 'all') {
     showAllReports.value = false;
     await loadAggregatedStats(domainId.value, {
       period: selectedPeriod.value,
       date_from: dateFrom.value,
-      date_to: dateTo.value
+      date_to: dateTo.value,
+      ...filter
     });
   } else if (selectedReportId.value) {
     showAllReports.value = false;
-    await loadDashboardStats(selectedReportId.value as number);
+    await loadDashboardStats(selectedReportId.value as number, filter);
   }
 };
 
 // Watch to load data when report changes
 watch(selectedReportId, () => {
+  loadData();
+});
+
+// Reload when Residential/Business filter changes
+watch([filterResidential, filterBusiness], () => {
   loadData();
 });
 
@@ -640,6 +648,41 @@ const toggleShowAll = () => {
             </p>
           </div>
           
+          <!-- Residential / Business filter -->
+          <div class="d-flex gap-3 align-center flex-shrink-0">
+            <span class="text-caption text-medium-emphasis mr-1">Data:</span>
+            <v-tooltip location="bottom">
+              <template #activator="{ props: tooltipProps }">
+                <div v-bind="tooltipProps" class="d-flex align-center gap-1">
+                  <v-switch
+                    v-model="filterResidential"
+                    color="primary"
+                    hide-details
+                    density="compact"
+                    label="Residential"
+                    class="flex-grow-0"
+                  />
+                </div>
+              </template>
+              <span>Residential: only residential + &quot;both&quot; address types</span>
+            </v-tooltip>
+            <v-tooltip location="bottom">
+              <template #activator="{ props: tooltipProps }">
+                <div v-bind="tooltipProps" class="d-flex align-center gap-1">
+                  <v-switch
+                    v-model="filterBusiness"
+                    color="primary"
+                    hide-details
+                    density="compact"
+                    label="Business"
+                    class="flex-grow-0"
+                  />
+                </div>
+              </template>
+              <span>Business: only business + &quot;both&quot; address types</span>
+            </v-tooltip>
+            <span class="text-caption text-medium-emphasis">({{ filterLabel }})</span>
+          </div>
           <!-- Seletor de Report -->
           <div class="d-flex gap-2 align-center" style="min-width: 300px;">
             <v-select

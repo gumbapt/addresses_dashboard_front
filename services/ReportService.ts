@@ -33,9 +33,9 @@ export class ReportService {
     }
   }
 
-  async getReport(id: number): Promise<ApiResponse<Report>> {
+  async getReport(id: number, filterParams?: { r?: 1; b?: 1 }): Promise<ApiResponse<Report>> {
     try {
-      const response = await this.reportRepository.getReport(id);
+      const response = await this.reportRepository.getReport(id, filterParams);
       
       return {
         success: response.success,
@@ -71,9 +71,9 @@ export class ReportService {
     }
   }
 
-  async getGlobalDomainRanking(sortBy?: string): Promise<ApiResponse<any>> {
+  async getGlobalDomainRanking(sortBy?: string, filterParams?: { r?: 1; b?: 1 }): Promise<ApiResponse<any>> {
     try {
-      const response = await this.reportRepository.getGlobalDomainRanking(sortBy);
+      const response = await this.reportRepository.getGlobalDomainRanking(sortBy, filterParams);
       
       return {
         success: response.success,
@@ -90,9 +90,21 @@ export class ReportService {
     }
   }
 
-  async compareDomains(domainIds: number[], metric?: string, dateFrom?: string, dateTo?: string): Promise<ApiResponse<any>> {
+  async compareDomains(
+    domainIds: number[],
+    metric?: string,
+    dateFrom?: string,
+    dateTo?: string,
+    filterParams?: { r?: 1; b?: 1 }
+  ): Promise<ApiResponse<any>> {
     try {
-      const response = await this.reportRepository.compareDomains(domainIds, metric, dateFrom, dateTo);
+      const response = await this.reportRepository.compareDomains(
+        domainIds,
+        metric,
+        dateFrom,
+        dateTo,
+        filterParams
+      );
       
       return {
         success: response.success,

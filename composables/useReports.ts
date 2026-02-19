@@ -35,12 +35,12 @@ export const useReports = () => {
   };
 
   // Função para carregar um report específico
-  const loadReport = async (id: number) => {
+  const loadReport = async (id: number, filterParams?: { r?: 1; b?: 1 }) => {
     loading.value = true;
     error.value = null;
     
     try {
-      const result = await reportService.getReport(id);
+      const result = await reportService.getReport(id, filterParams);
       
       if (result.success && result.data) {
         return result.data;

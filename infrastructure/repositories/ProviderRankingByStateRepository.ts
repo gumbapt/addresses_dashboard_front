@@ -36,6 +36,12 @@ export class ProviderRankingByStateRepository {
       if (filters.aggregate_by_provider !== undefined) {
         queryParams.append('aggregate_by_provider', filters.aggregate_by_provider ? 'true' : 'false');
       }
+      if (filters.r) {
+        queryParams.append('r', '1');
+      }
+      if (filters.b) {
+        queryParams.append('b', '1');
+      }
       
       const url = `/reports/global/provider-ranking-by-state?${queryParams.toString()}`;
       console.log('🔍 ProviderRankingByStateRepository - URL:', url);

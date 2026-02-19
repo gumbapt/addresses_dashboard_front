@@ -9,13 +9,13 @@ export const useGlobalRanking = () => {
   
   const reportService = new ReportService();
 
-  const loadRanking = async (sortBy: string = 'score') => {
+  const loadRanking = async (sortBy: string = 'score', filterParams?: { r?: 1; b?: 1 }) => {
     loading.value = true;
     error.value = null;
     currentSortBy.value = sortBy;
     
     try {
-      const result = await reportService.getGlobalDomainRanking(sortBy);
+      const result = await reportService.getGlobalDomainRanking(sortBy, filterParams);
       
       if (result.success && result.data) {
         rankingData.value = result.data;

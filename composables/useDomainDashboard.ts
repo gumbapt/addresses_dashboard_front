@@ -10,12 +10,21 @@ export const useDomainDashboard = () => {
   const apiClient = new ApiClient();
 
   // Carregar dados de um report específico
-  const loadDashboardStats = async (reportId: number) => {
+  const loadDashboardStats = async (
+    reportId: number,
+    filterParams?: { r?: 1; b?: 1 }
+  ) => {
     loading.value = true;
     error.value = null;
     
     try {
-      const response = await apiClient.get<{ success: boolean; data: Report }>(`/reports/${reportId}`);
+      const query = new URLSearchParams();
+      if (filterParams?.r) query.set('r', '1');
+      if (filterParams?.b) query.set('b', '1');
+      const qs = query.toString();
+      const response = await apiClient.get<{ success: boolean; data: Report }>(
+        `/reports/${reportId}${qs ? `?${qs}` : ''}`
+      );
       
       if (response.success && response.data) {
         reportData.value = response.data;
@@ -54,6 +63,8 @@ export const useDomainDashboard = () => {
       period?: string | null;
       date_from?: string | null;
       date_to?: string | null;
+      r?: 1;
+      b?: 1;
     }
   ) => {
     loading.value = true;
@@ -70,6 +81,12 @@ export const useDomainDashboard = () => {
       }
       if (filters?.date_to) {
         queryParams.append('date_to', filters.date_to);
+      }
+      if (filters?.r) {
+        queryParams.append('r', '1');
+      }
+      if (filters?.b) {
+        queryParams.append('b', '1');
       }
       
       const queryString = queryParams.toString();

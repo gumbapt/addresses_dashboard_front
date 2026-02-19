@@ -39,6 +39,12 @@ export class ReportRepository {
       if (filters?.end_date) {
         params.append('end_date', filters.end_date);
       }
+      if (filters?.r) {
+        params.append('r', '1');
+      }
+      if (filters?.b) {
+        params.append('b', '1');
+      }
       
       const queryString = params.toString();
       const url = `/reports${queryString ? '?' + queryString : ''}`;
@@ -51,9 +57,15 @@ export class ReportRepository {
     }
   }
 
-  async getReport(id: number): Promise<ReportResponse> {
+  async getReport(id: number, filterParams?: { r?: 1; b?: 1 }): Promise<ReportResponse> {
     try {
-      const response = await this.apiClient.get<ReportResponse>(`/reports/${id}`);
+      const params = new URLSearchParams();
+      if (filterParams?.r) params.append('r', '1');
+      if (filterParams?.b) params.append('b', '1');
+      const qs = params.toString();
+      const response = await this.apiClient.get<ReportResponse>(
+        `/reports/${id}${qs ? '?' + qs : ''}`
+      );
       return response;
     } catch (error) {
       console.error('Get report failed:', error);
@@ -71,14 +83,14 @@ export class ReportRepository {
     }
   }
 
-  async getGlobalDomainRanking(sortBy?: string): Promise<any> {
+  async getGlobalDomainRanking(sortBy?: string, filterParams?: { r?: 1; b?: 1 }): Promise<any> {
     try {
-      let url = '/reports/global/domain-ranking';
-      
-      if (sortBy) {
-        url += `?sort_by=${sortBy}`;
-      }
-      
+      const params = new URLSearchParams();
+      if (sortBy) params.append('sort_by', sortBy);
+      if (filterParams?.r) params.append('r', '1');
+      if (filterParams?.b) params.append('b', '1');
+      const qs = params.toString();
+      const url = `/reports/global/domain-ranking${qs ? '?' + qs : ''}`;
       const response = await this.apiClient.get<any>(url);
       return response;
     } catch (error) {
@@ -87,23 +99,21 @@ export class ReportRepository {
     }
   }
 
-  async compareDomains(domainIds: number[], metric?: string, dateFrom?: string, dateTo?: string): Promise<any> {
+  async compareDomains(
+    domainIds: number[],
+    metric?: string,
+    dateFrom?: string,
+    dateTo?: string,
+    filterParams?: { r?: 1; b?: 1 }
+  ): Promise<any> {
     try {
       const params = new URLSearchParams();
       params.append('domains', domainIds.join(','));
-      
-      if (metric) {
-        params.append('metric', metric);
-      }
-      
-      if (dateFrom) {
-        params.append('date_from', dateFrom);
-      }
-      
-      if (dateTo) {
-        params.append('date_to', dateTo);
-      }
-      
+      if (metric) params.append('metric', metric);
+      if (dateFrom) params.append('date_from', dateFrom);
+      if (dateTo) params.append('date_to', dateTo);
+      if (filterParams?.r) params.append('r', '1');
+      if (filterParams?.b) params.append('b', '1');
       const url = `/reports/global/comparison?${params.toString()}`;
       const response = await this.apiClient.get<any>(url);
       return response;

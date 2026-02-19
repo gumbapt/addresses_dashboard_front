@@ -302,6 +302,10 @@ export interface ReportFilters {
   end_date?: string;
   page?: number;
   per_page?: number;
+  /** Residential filter: 1 = only residential (+ both) data */
+  r?: 1;
+  /** Business filter: 1 = only business (+ both) data. All = omit both or send r=1&b=1 */
+  b?: 1;
 }
 
 // Aggregated Domain Stats types
@@ -567,6 +571,8 @@ export interface ProviderRankingFilters {
   per_page?: number;
   limit?: number;  // Deprecated, use page/per_page
   aggregate_by_provider?: boolean;  // When true, aggregates all technologies of the same provider for each domain
+  r?: 1;
+  b?: 1;
 }
 
 export interface ProviderRankingResponse {
@@ -660,6 +666,8 @@ export interface ProviderRankingByStateFilters {
   date_to?: string | null;
   sort_by?: 'total_requests' | 'success_rate' | 'avg_speed' | 'total_reports';
   aggregate_by_provider?: boolean;
+  r?: 1;
+  b?: 1;
 }
 
 export interface ProviderRankingByStateResponse {

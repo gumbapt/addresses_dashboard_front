@@ -393,6 +393,11 @@ import type { ProviderRankingFilters } from '~/types/api';
 
 const route = useRoute();
 
+const props = withDefaults(
+  defineProps<{ reportFilterParams?: { r?: 1; b?: 1 } }>(),
+  { reportFilterParams: undefined }
+);
+
 const {
   formattedRankings,
   totalEntries,
@@ -411,6 +416,10 @@ const {
   changePerPage,
   changeLocalSort
 } = useProviderRankings();
+
+const loadWithReportFilter = () => {
+  loadProviderRankings({ ...filters.value, ...props.reportFilterParams });
+};
 
 // Local filters for UI - initialize from URL query params (prefixed for provider-ranking tab)
 const localFilters = ref<ProviderRankingFilters>({ 
@@ -561,9 +570,9 @@ const onFilterChange = () => {
   
   // Reset to page 1 when filters change
   localFilters.value.page = 1;
-  updateFilters(localFilters.value);
+  updateFilters({ ...localFilters.value, ...props.reportFilterParams });
   updateURL();
-  loadProviderRankings();
+  loadWithReportFilter();
 };
 
 const onDateChange = () => {
@@ -586,7 +595,7 @@ const onClearFilters = () => {
   localFilters.value.date_to = null;
   changeLocalSort('total_requests'); // Reset sort to default
   updateURL();
-  loadProviderRankings();
+  loadWithReportFilter();
 };
 
 const onPreviousPage = () => {
@@ -638,17 +647,21 @@ watch(() => route.query, (newQuery) => {
       newDateTo !== localFilters.value.date_to) {
     localFilters.value.date_from = newDateFrom;
     localFilters.value.date_to = newDateTo;
-    updateFilters(localFilters.value);
-    loadProviderRankings();
+    updateFilters({ ...localFilters.value, ...props.reportFilterParams });
+    loadWithReportFilter();
   }
 }, { immediate: false });
+
+watch(() => props.reportFilterParams, () => {
+  loadWithReportFilter();
+}, { deep: true });
 
 onMounted(() => {
   // Initialize filters from URL if present
   if (localFilters.value.date_from || localFilters.value.date_to) {
-    updateFilters(localFilters.value);
+    updateFilters({ ...localFilters.value, ...props.reportFilterParams });
   }
-  loadProviderRankings();
+  loadWithReportFilter();
 });
 </script>
 

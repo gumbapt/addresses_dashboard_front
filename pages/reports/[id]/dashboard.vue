@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import UiParentCard from '@/components/shared/UiParentCard.vue';
 
@@ -13,6 +13,7 @@ const reportId = computed(() => parseInt(route.params.id as string));
 
 // Use composables
 const { reportData, loading, error, loadDashboardStats, providerChartData, topStatesChartData, speedByStateChartData, technologyChartData, topCards } = useDomainDashboard();
+const { filterResidential, filterBusiness, reportFilterParams, filterLabel } = useReportFilter();
 
 // Report and Domain info
 const currentDomain = computed(() => {
@@ -25,8 +26,16 @@ const reportDate = computed(() => {
 });
 
 // Load data
-onMounted(async () => {
-  await loadDashboardStats(reportId.value);
+const loadData = async () => {
+  await loadDashboardStats(reportId.value, reportFilterParams.value);
+};
+
+onMounted(() => {
+  loadData();
+});
+
+watch([filterResidential, filterBusiness], () => {
+  loadData();
 });
 
 // Chart configurations
@@ -252,7 +261,7 @@ const goBack = () => {
     <!-- Header -->
     <v-row class="mb-4">
       <v-col cols="12">
-        <div class="d-flex align-center justify-space-between">
+        <div class="d-flex align-center justify-space-between flex-wrap gap-3">
           <div>
             <v-btn
               variant="text"
@@ -266,6 +275,41 @@ const goBack = () => {
             <p class="text-body-1 text-medium-emphasis">
               Report Date: {{ reportDate }} | Analytics and statistics
             </p>
+          </div>
+          <!-- Residential / Business filter -->
+          <div class="d-flex gap-3 align-center flex-shrink-0">
+            <span class="text-caption text-medium-emphasis mr-1">Data:</span>
+            <v-tooltip location="bottom">
+              <template #activator="{ props: tooltipProps }">
+                <div v-bind="tooltipProps" class="d-flex align-center gap-1">
+                  <v-switch
+                    v-model="filterResidential"
+                    color="primary"
+                    hide-details
+                    density="compact"
+                    label="Residential"
+                    class="flex-grow-0"
+                  />
+                </div>
+              </template>
+              <span>Residential: only residential + &quot;both&quot; address types</span>
+            </v-tooltip>
+            <v-tooltip location="bottom">
+              <template #activator="{ props: tooltipProps }">
+                <div v-bind="tooltipProps" class="d-flex align-center gap-1">
+                  <v-switch
+                    v-model="filterBusiness"
+                    color="primary"
+                    hide-details
+                    density="compact"
+                    label="Business"
+                    class="flex-grow-0"
+                  />
+                </div>
+              </template>
+              <span>Business: only business + &quot;both&quot; address types</span>
+            </v-tooltip>
+            <span class="text-caption text-medium-emphasis">({{ filterLabel }})</span>
           </div>
         </div>
       </v-col>

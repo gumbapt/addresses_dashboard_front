@@ -35,6 +35,7 @@ const {
   topCards
 } = useDomainDashboard();
 const { formattedReports, loading: reportsLoading, loadReports } = useReports();
+const { filterResidential, filterBusiness, reportFilterParams, filterLabel } = useReportFilter();
 const { 
   ranking: stateRanking, 
   formattedRanking: formattedStateRanking,
@@ -92,9 +93,9 @@ const domainOptions = computed(() => {
 
 // Load data
 onMounted(() => {
-  loadRanking('score');
+  loadRanking('score', reportFilterParams.value);
   loadDomains();
-  loadProviderRankings(); // Load provider rankings
+  loadProviderRankings({ ...filters.value, ...reportFilterParams.value });
   
   // Initialize date filters from URL for state ranking
   if (route.query.state_date_from) {
@@ -118,7 +119,7 @@ onMounted(() => {
 
 // Function to change sorting
 const changeSortBy = (sortBy: string) => {
-  loadRanking(sortBy);
+  loadRanking(sortBy, reportFilterParams.value);
 };
 
 // Function to navigate to domain dashboard
@@ -280,17 +281,18 @@ const onDomainDashboardDateChange = () => {
 // Load Domain Dashboard data
 const loadDomainDashboardData = async () => {
   if (!selectedDomainId.value) return;
-  
+  const filter = reportFilterParams.value;
   if (selectedReportId.value === 'all') {
     showAllReports.value = false;
     await loadAggregatedStats(selectedDomainId.value, {
       period: domainDashboardPeriod.value,
       date_from: domainDashboardDateFrom.value,
-      date_to: domainDashboardDateTo.value
+      date_to: domainDashboardDateTo.value,
+      ...filter
     });
   } else if (selectedReportId.value) {
     showAllReports.value = false;
-    await loadDashboardStats(selectedReportId.value as number);
+    await loadDashboardStats(selectedReportId.value as number, filter);
   }
 };
 
@@ -324,7 +326,13 @@ const compare = () => {
   if (selectedDomainIds.value.length < 2) {
     return;
   }
-  loadComparison(selectedDomainIds.value, undefined, dateFrom.value || undefined, dateTo.value || undefined);
+  loadComparison(
+    selectedDomainIds.value,
+    undefined,
+    dateFrom.value || undefined,
+    dateTo.value || undefined,
+    reportFilterParams.value
+  );
   currentTab.value = 'comparison';
 };
 
@@ -383,7 +391,29 @@ watch(currentTab, async (newTab) => {
 watch(selectedStateId, async (newStateId) => {
   if (newStateId) {
     updateStateRankingFilters({ state_id: newStateId });
-    await loadRankingByState();
+    await loadRankingByState(reportFilterParams.value);
+  }
+});
+
+// Reload current tab data when Residential/Business filter changes
+watch([filterResidential, filterBusiness], async () => {
+  const filter = reportFilterParams.value;
+  if (currentTab.value === 'ranking') {
+    loadRanking(currentSortBy.value, filter);
+  } else if (currentTab.value === 'provider-ranking') {
+    loadProviderRankings({ ...filters.value, ...filter });
+  } else if (currentTab.value === 'domain-dashboard' && selectedDomainId.value) {
+    await loadDomainDashboardData();
+  } else if (currentTab.value === 'state-ranking' && selectedStateId.value) {
+    await loadRankingByState(filter);
+  } else if (currentTab.value === 'comparison' && selectedDomainIds.value.length >= 2) {
+    loadComparison(
+      selectedDomainIds.value,
+      undefined,
+      dateFrom.value || undefined,
+      dateTo.value || undefined,
+      filter
+    );
   }
 });
 
@@ -475,7 +505,7 @@ watch(() => stateRankingFilters.value.period, async (newPeriod, oldPeriod) => {
     // Wait a bit before updating URL to avoid conflicts
     await nextTick();
     updateStateRankingURL();
-    await loadRankingByState();
+    await loadRankingByState(reportFilterParams.value);
   } finally {
     // Reset flag after a delay to ensure all updates are complete
     setTimeout(() => {
@@ -486,19 +516,19 @@ watch(() => stateRankingFilters.value.period, async (newPeriod, oldPeriod) => {
 
 watch(() => stateRankingFilters.value.sort_by, async () => {
   if (selectedStateId.value) {
-    await loadRankingByState();
+    await loadRankingByState(reportFilterParams.value);
   }
 });
 
 watch(() => stateRankingFilters.value.provider_id, async () => {
   if (selectedStateId.value) {
-    await loadRankingByState();
+    await loadRankingByState(reportFilterParams.value);
   }
 });
 
 watch(() => stateRankingFilters.value.aggregate_by_provider, async () => {
   if (selectedStateId.value) {
-    await loadRankingByState();
+    await loadRankingByState(reportFilterParams.value);
   }
 });
 
@@ -522,7 +552,7 @@ const onStateRankingDateChange = async () => {
       }
     }
     updateStateRankingURL();
-    await loadRankingByState();
+    await loadRankingByState(reportFilterParams.value);
   } finally {
     setTimeout(() => {
       isUpdatingStateRankingFilters.value = false;
@@ -737,11 +767,48 @@ const technologyDistributionTable = computed(() => {
   <div>
     <!-- Header -->
     <v-row class="mb-4">
-      <v-col cols="12">
-        <h1 class="text-h4 font-weight-bold">Analytics</h1>
-        <p class="text-body-1 text-medium-emphasis">
-          Global Address Search Analytics
-        </p>
+      <v-col cols="12" class="d-flex align-center justify-space-between flex-wrap gap-3">
+        <div>
+          <h1 class="text-h4 font-weight-bold">Analytics</h1>
+          <p class="text-body-1 text-medium-emphasis">
+            Global Address Search Analytics
+          </p>
+        </div>
+        <!-- Residential / Business filter -->
+        <div class="d-flex gap-3 align-center flex-shrink-0">
+          <span class="text-caption text-medium-emphasis mr-1">Data:</span>
+          <v-tooltip location="bottom">
+            <template #activator="{ props: tooltipProps }">
+              <div v-bind="tooltipProps" class="d-flex align-center gap-1">
+                <v-switch
+                  v-model="filterResidential"
+                  color="primary"
+                  hide-details
+                  density="compact"
+                  label="Residential"
+                  class="flex-grow-0"
+                />
+              </div>
+            </template>
+            <span>Residential: only residential + &quot;both&quot; address types</span>
+          </v-tooltip>
+          <v-tooltip location="bottom">
+            <template #activator="{ props: tooltipProps }">
+              <div v-bind="tooltipProps" class="d-flex align-center gap-1">
+                <v-switch
+                  v-model="filterBusiness"
+                  color="primary"
+                  hide-details
+                  density="compact"
+                  label="Business"
+                  class="flex-grow-0"
+                />
+              </div>
+            </template>
+            <span>Business: only business + &quot;both&quot; address types</span>
+          </v-tooltip>
+          <span class="text-caption text-medium-emphasis">({{ filterLabel }})</span>
+        </div>
       </v-col>
     </v-row>
 
@@ -1292,7 +1359,7 @@ const technologyDistributionTable = computed(() => {
 
     <!-- TAB: Provider Rankings -->
     <div v-if="currentTab === 'provider-ranking'">
-      <ProviderRankingTable />
+      <ProviderRankingTable :report-filter-params="reportFilterParams" />
     </div>
 
     <!-- TAB: Domain Dashboard -->
@@ -1948,7 +2015,7 @@ const technologyDistributionTable = computed(() => {
                   color="primary"
                   variant="outlined"
                   block
-                  @click="clearStateRankingFilters(); updateStateRankingURL(); loadRankingByState()"
+                  @click="clearStateRankingFilters(); updateStateRankingURL(); loadRankingByState(reportFilterParams)"
                 >
                   Clear Filters
                 </v-btn>

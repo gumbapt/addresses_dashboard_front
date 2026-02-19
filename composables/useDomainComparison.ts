@@ -12,7 +12,8 @@ export const useDomainComparison = () => {
     domainIds: number[], 
     metric?: string, 
     dateFrom?: string, 
-    dateTo?: string
+    dateTo?: string,
+    filterParams?: { r?: 1; b?: 1 }
   ) => {
     if (domainIds.length < 2) {
       error.value = 'Please select at least 2 domains to compare';
@@ -23,7 +24,13 @@ export const useDomainComparison = () => {
     error.value = null;
     
     try {
-      const result = await reportService.compareDomains(domainIds, metric, dateFrom, dateTo);
+      const result = await reportService.compareDomains(
+        domainIds,
+        metric,
+        dateFrom,
+        dateTo,
+        filterParams
+      );
       
       if (result.success && result.data) {
         comparisonData.value = result.data;
